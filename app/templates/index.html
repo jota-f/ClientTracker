@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Início - ClientTracker{% endblock %}
+
+{% block content %}
+<div class="text-center">
+    <h1 class="text-4xl font-bold text-gray-900 mb-4">
+        Bem-vindo ao ClientTracker
+    </h1>
+    <p class="text-xl text-gray-600 mb-8">
+        Gerencie seus clientes e tarefas de forma eficiente e inteligente.
+    </p>
+    
+    <!-- Cards de Estatísticas -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="card">
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Clientes</h3>
+            <p class="text-3xl font-bold text-blue-600">{{ total_clients|default(0) }}</p>
+        </div>
+        <div class="card">
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Tarefas Pendentes</h3>
+            <p class="text-3xl font-bold text-orange-600">{{ pending_tasks|default(0) }}</p>
+        </div>
+        <div class="card">
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Follow-ups Hoje</h3>
+            <p class="text-3xl font-bold text-green-600">{{ today_followups|default(0) }}</p>
+        </div>
+    </div>
+    
+    <!-- Botões de Ação -->
+    <div class="flex justify-center space-x-4">
+        <a href="/clients/new" class="btn-primary">
+            Adicionar Cliente
+        </a>
+        <a href="/tasks/new" class="bg-white text-blue-600 px-4 py-2 rounded border border-blue-600 hover:bg-blue-50 transition-colors">
+            Nova Tarefa
+        </a>
+    </div>
+</div>
+{% endblock %} 
