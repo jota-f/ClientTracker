@@ -14,25 +14,99 @@ class TaskService:
     @staticmethod
     async def create_task(task_data: Dict[str, Any]) -> Task:
         """Cria uma nova tarefa."""
-        db = await get_db()
-        
-        # Se houver um client_id, verifica se o cliente existe e atualiza o client_name
-        if task_data.get("client_id"):
-            client = await ClientService.get_client_by_id(task_data["client_id"])
-            if client:
-                task_data["client_name"] = client.name
-        
-        # Define timestamps
-        now = datetime.now(timezone.utc)
-        task_data["created_at"] = now
-        task_data["updated_at"] = now
-        
-        # Insere a tarefa no banco de dados
-        result = await db[TaskService.COLLECTION].insert_one(task_data)
-        task_data["_id"] = result.inserted_id
-        
-        logger.info(f"Tarefa criada com ID: {result.inserted_id}")
-        return Task(**task_data)
+        try:
+            db = await get_db()
+            
+            logger.info(f"Iniciando criação de tarefa no serviço: {task_data.get('title')}")
+            logger.info(f"Dados completos: {task_data}")
+            
+            # Se houver um client_id, verifica se o cliente existe e atualiza o client_name
+            if task_data.get("client_id"):
+                try:
+                    client_id = str(task_data["client_id"])
+                    if client_id and client_id.strip():
+                        logger.info(f"Buscando cliente com ID: {client_id}")
+                        client = await ClientService.get_client_by_id(client_id)
+                        if client:
+                            task_data["client_name"] = client.name
+                            logger.info(f"Nome do cliente atualizado: {client.name}")
+                        else:
+                            logger.warning(f"Cliente não encontrado: {client_id}")
+                    else:
+                        task_data["client_id"] = None
+                        logger.info("ID do cliente vazio, definido como None")
+                except Exception as e:
+                    logger.error(f"Erro ao buscar cliente: {e}")
+                    task_data["client_id"] = None
+            
+            # Define timestamps
+            now = datetime.now(timezone.utc)
+            task_data["created_at"] = now
+            task_data["updated_at"] = now
+            
+            # Verifica todos os campos da tarefa
+            required_fields = ["title", "priority", "status"]
+            for field in required_fields:
+                if field not in task_data or task_data[field] is None or task_data[field] == "":
+                    logger.error(f"Campo obrigatório ausente: {field}")
+                    raise ValueError(f"Campo obrigatório ausente: {field}")
+            
+            # Inicializa campos que podem ser nulos
+            optional_fields = {
+                "description": None,
+                "due_date": None,
+                "client_id": None,
+                "client_name": None,
+                "assignee": None,
+                "comments": []
+            }
+            
+            for field, default_value in optional_fields.items():
+                if field not in task_data or task_data[field] == "":
+                    task_data[field] = default_value
+            
+            # Certifica-se de que as datas estão no formato correto
+            for date_field in ["due_date", "created_at", "updated_at"]:
+                if date_field in task_data and task_data[date_field] is not None:
+                    if isinstance(task_data[date_field], str):
+                        try:
+                            task_data[date_field] = datetime.fromisoformat(
+                                task_data[date_field].replace('Z', '+00:00')
+                            )
+                        except (ValueError, TypeError) as e:
+                            logger.error(f"Erro ao converter data {date_field}: {e}")
+                            if date_field == "due_date":
+                                task_data[date_field] = None
+                    
+                    # Garantir que a data tenha timezone
+                    if isinstance(task_data[date_field], datetime) and task_data[date_field].tzinfo is None:
+                        task_data[date_field] = task_data[date_field].replace(tzinfo=timezone.utc)
+            
+            logger.info(f"Dados finais da tarefa: {task_data}")
+            
+            # Insere a tarefa no banco de dados
+            result = await db[TaskService.COLLECTION].insert_one(task_data)
+            task_data["_id"] = result.inserted_id
+            
+            logger.info(f"Tarefa criada com sucesso. ID: {result.inserted_id}")
+            
+            # Tenta converter para Task ou retorna como dicionário se falhar
+            try:
+                return Task(**task_data)
+            except Exception as e:
+                logger.error(f"Erro ao converter para Task: {e}")
+                # Criar manualmente um objeto Task com os campos mínimos
+                return Task(
+                    _id=result.inserted_id,
+                    title=task_data["title"],
+                    priority=task_data["priority"],
+                    status=task_data["status"],
+                    created_at=task_data["created_at"],
+                    updated_at=task_data["updated_at"]
+                )
+        except Exception as e:
+            logger.error(f"Erro ao criar tarefa no serviço: {e}", exc_info=True)
+            raise
 
     @staticmethod
     async def get_task_by_id(task_id: str) -> Optional[Task]:

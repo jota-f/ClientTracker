@@ -11,6 +11,7 @@ from app.services.client_service import ClientService
 from app.services.task_service import TaskService
 from app.services.dashboard_service import DashboardService
 import logging
+from datetime import datetime, timezone
 
 # Configure logging
 logging.basicConfig(
@@ -124,17 +125,19 @@ async def edit_client_page(request: Request, client_id: str):
 @app.get("/tasks")
 async def list_tasks_page(request: Request):
     tasks = await TaskService.get_all_tasks()
+    now = datetime.now(timezone.utc)
     return templates.TemplateResponse(
         "tasks.html",
-        {"request": request, "tasks": tasks}
+        {"request": request, "tasks": tasks, "now": now}
     )
 
 @app.get("/tasks/kanban")
 async def kanban_board_page(request: Request):
     tasks = await TaskService.get_all_tasks()
+    now = datetime.now(timezone.utc)
     return templates.TemplateResponse(
         "kanban.html",
-        {"request": request, "tasks": tasks}
+        {"request": request, "tasks": tasks, "now": now}
     )
 
 @app.get("/tasks/eisenhower")
@@ -143,6 +146,15 @@ async def eisenhower_matrix_page(request: Request):
     return templates.TemplateResponse(
         "eisenhower.html",
         {"request": request, "matrix": matrix}
+    )
+
+@app.get("/tasks/priority-matrix")
+async def priority_matrix_page(request: Request):
+    matrix = await TaskService.get_eisenhower_matrix()
+    now = datetime.now(timezone.utc)
+    return templates.TemplateResponse(
+        "priority_matrix.html",
+        {"request": request, "matrix": matrix, "now": now}
     )
 
 @app.get("/tasks/new")
@@ -158,9 +170,10 @@ async def task_detail_page(request: Request, task_id: str):
     task = await TaskService.get_task_by_id(task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Tarefa não encontrada")
+    now = datetime.now(timezone.utc)
     return templates.TemplateResponse(
         "task_detail.html",
-        {"request": request, "task": task}
+        {"request": request, "task": task, "now": now}
     )
 
 @app.get("/tasks/{task_id}/edit")

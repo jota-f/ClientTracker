@@ -3,22 +3,58 @@ from app.models.task import Task, TaskStatus, TaskPriority, TaskComment
 from app.services.task_service import TaskService
 from typing import List, Optional
 import logging
+from datetime import timezone, datetime
+from pydantic import ValidationError
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
 @router.post("/", response_model=Task, status_code=status.HTTP_201_CREATED)
-async def create_task(task: Task = Body(...)):
+async def create_task(task_data: dict = Body(...)):
     """Cria uma nova tarefa."""
     try:
-        logger.info(f"Criando tarefa: {task.title}")
-        created_task = await TaskService.create_task(task.dict(by_alias=True, exclude_unset=True))
+        logger.info(f"Recebendo dados para criar tarefa: {task_data}")
+        
+        # Verificar e tratar os dados necessários
+        if "priority" not in task_data or not task_data["priority"]:
+            logger.error("Erro: Prioridade não informada")
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Prioridade é obrigatória"
+            )
+            
+        # Verificar e tratar datas
+        if "due_date" in task_data and task_data["due_date"]:
+            try:
+                # Converter string de data para objeto datetime
+                due_date = datetime.fromisoformat(task_data["due_date"].replace('Z', '+00:00'))
+                task_data["due_date"] = due_date
+                logger.info(f"Data de vencimento convertida: {due_date}")
+            except (ValueError, TypeError) as e:
+                logger.error(f"Erro ao converter data de vencimento: {e}")
+                task_data["due_date"] = None
+        
+        # Garantir que os campos obrigatórios estão presentes
+        task_data["status"] = task_data.get("status", "TODO")
+        
+        # Remover campos vazios opcionais
+        for key in list(task_data.keys()):
+            if task_data[key] == "" and key not in ["title", "priority", "status"]:
+                task_data[key] = None
+        
+        logger.info(f"Dados processados: {task_data}")
+        
+        # Criar a tarefa usando o serviço
+        created_task = await TaskService.create_task(task_data)
+        logger.info(f"Tarefa criada com sucesso: {created_task.id}")
         return created_task
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Erro ao criar tarefa: {e}")
+        logger.error(f"Erro ao criar tarefa: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao criar tarefa: {e}"
+            detail=f"Erro ao criar tarefa: {str(e)}"
         )
 
 @router.get("/{task_id}", response_model=Task)
@@ -100,4 +136,23 @@ async def update_status(task_id: str, new_status: TaskStatus = Body(..., embed=T
 @router.get("/eisenhower", response_model=dict)
 async def get_eisenhower_matrix():
     """Recupera tarefas organizadas pela Matriz Eisenhower."""
-    return await TaskService.get_eisenhower_matrix() 
+    return await TaskService.get_eisenhower_matrix()
+
+@router.patch("/{task_id}/priority", response_model=Task)
+async def update_priority(task_id: str, new_priority: TaskPriority = Body(..., embed=True)):
+    """Atualiza a prioridade de uma tarefa (para funcionalidade de mudança de prioridade)."""
+    try:
+        logger.info(f"Atualizando prioridade da tarefa {task_id} para {new_priority}")
+        updated_task = await TaskService.update_task(task_id, {"priority": new_priority})
+        if not updated_task:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Tarefa não encontrada ou erro ao atualizar prioridade"
+            )
+        return updated_task
+    except Exception as e:
+        logger.error(f"Erro ao atualizar prioridade: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao atualizar prioridade da tarefa: {str(e)}"
+        ) 

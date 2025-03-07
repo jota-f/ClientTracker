@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}{{ task.title }} | ClientTracker{% endblock %}
+
+{% block content %}
+<div class="bg-white shadow rounded-lg overflow-hidden max-w-3xl mx-auto">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <div class="flex justify-between items-center">
+            <h1 class="text-xl font-semibold text-gray-800">Detalhes da Tarefa</h1>
+            <div class="flex space-x-2">
+                <a href="/tasks/{{ task.id }}/edit" class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <svg class="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    </svg>
+                    Editar
+                </a>
+                <a href="/tasks" class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <svg class="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    Voltar
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="p-6">
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">{{ task.title }}</h2>
+            
+            <div class="mt-2 flex items-center space-x-2">
+                {% if task.status == "TODO" %}
+                <span class="px-2.5 py-0.5 text-sm rounded-full bg-gray-100 text-gray-800">A Fazer</span>
+                {% elif task.status == "IN_PROGRESS" %}
+                <span class="px-2.5 py-0.5 text-sm rounded-full bg-blue-100 text-blue-800">Em Progresso</span>
+                {% elif task.status == "DONE" %}
+                <span class="px-2.5 py-0.5 text-sm rounded-full bg-green-100 text-green-800">Concluída</span>
+                {% else %}
+                <span class="px-2.5 py-0.5 text-sm rounded-full bg-gray-800 text-white">Arquivada</span>
+                {% endif %}
+                
+                {% if task.priority == "URGENT_IMPORTANT" %}
+                <span class="px-2.5 py-0.5 text-sm rounded-full bg-red-100 text-red-800">FAÇA AGORA</span>
+                {% elif task.priority == "NOT_URGENT_IMPORTANT" %}
+                <span class="px-2.5 py-0.5 text-sm rounded-full bg-blue-100 text-blue-800">PLANEJE</span>
+                {% elif task.priority == "URGENT_NOT_IMPORTANT" %}
+                <span class="px-2.5 py-0.5 text-sm rounded-full bg-yellow-100 text-yellow-800">RESOLVA RÁPIDO</span>
+                {% else %}
+                <span class="px-2.5 py-0.5 text-sm rounded-full bg-gray-100 text-gray-800">POSTERGUE</span>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+                <h3 class="text-base font-medium text-gray-500 mb-2">Detalhes</h3>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    {% if task.description %}
+                    <div class="mb-4">
+                        <h4 class="text-sm font-medium text-gray-500 mb-1">Descrição</h4>
+                        <p class="text-gray-900">{{ task.description }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if task.due_date %}
+                    <div class="mb-4">
+                        <h4 class="text-sm font-medium text-gray-500 mb-1">Data de Vencimento</h4>
+                        <p class="text-gray-900 {% if task.due_date < now %}text-red-600 font-medium{% endif %}">
+                            {{ task.due_date.strftime('%d/%m/%Y') }}
+                        </p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if task.assignee %}
+                    <div class="mb-4">
+                        <h4 class="text-sm font-medium text-gray-500 mb-1">Responsável</h4>
+                        <p class="text-gray-900">{{ task.assignee }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-4">
+                        <h4 class="text-sm font-medium text-gray-500 mb-1">Criada em</h4>
+                        <p class="text-gray-900">{{ task.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500 mb-1">Última atualização</h4>
+                        <p class="text-gray-900">{{ task.updated_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <h3 class="text-base font-medium text-gray-500 mb-2">Cliente</h3>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    {% if task.client_name %}
+                    <div class="mb-4">
+                        <h4 class="text-sm font-medium text-gray-500 mb-1">Nome do Cliente</h4>
+                        <a href="/clients/{{ task.client_id }}" class="text-blue-600 hover:text-blue-800">
+                            {{ task.client_name }}
+                        </a>
+                    </div>
+                    {% else %}
+                    <p class="text-gray-500 italic">Nenhum cliente associado a esta tarefa.</p>
+                    {% endif %}
+                </div>
+                
+                {% if task.comments and task.comments|length > 0 %}
+                <h3 class="text-base font-medium text-gray-500 mt-4 mb-2">Comentários</h3>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    {% for comment in task.comments %}
+                    <div class="{% if not loop.last %}mb-4 pb-4 border-b border-gray-200{% endif %}">
+                        <p class="text-gray-900">{{ comment.text }}</p>
+                        <p class="text-xs text-gray-500 mt-1">{{ comment.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="mt-6 pt-6 border-t border-gray-200">
+            <h3 class="text-base font-medium text-gray-500 mb-3">Adicionar Comentário</h3>
+            <form id="commentForm" class="space-y-3">
+                <div>
+                    <textarea id="commentText" placeholder="Digite seu comentário..." rows="3"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
+                </div>
+                <div class="flex justify-end">
+                    <button type="submit" id="addCommentBtn" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Adicionar Comentário
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const commentForm = document.getElementById('commentForm');
+        const commentText = document.getElementById('commentText');
+        const addCommentBtn = document.getElementById('addCommentBtn');
+        
+        commentForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!commentText.value.trim()) {
+                alert('Por favor, digite um comentário.');
+                return;
+            }
+            
+            addCommentBtn.disabled = true;
+            addCommentBtn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Enviando...';
+            
+            try {
+                const response = await fetch(`/api/v1/tasks/{{ task.id }}/comments`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ comment_text: commentText.value })
+                });
+                
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    const errorData = await response.json();
+                    alert(`Erro: ${errorData.detail || 'Ocorreu um erro ao adicionar o comentário.'}`);
+                    addCommentBtn.disabled = false;
+                    addCommentBtn.textContent = 'Adicionar Comentário';
+                }
+            } catch (error) {
+                console.error('Erro ao adicionar comentário:', error);
+                alert('Ocorreu um erro ao adicionar o comentário.');
+                addCommentBtn.disabled = false;
+                addCommentBtn.textContent = 'Adicionar Comentário';
+            }
+        });
+    });
+</script>
+{% endblock %} 

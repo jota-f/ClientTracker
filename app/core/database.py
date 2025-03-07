@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)
 
 class Database:
     client: AsyncIOMotorClient = None
+    database = None
     
     def get_db_name(self) -> str:
         """Extract database name from MongoDB URL"""
@@ -38,4 +39,8 @@ async def close_mongo_connection():
     """Close database connection."""
     logger.info("Closing MongoDB connection...")
     await Database.close()
-    logger.info("MongoDB connection closed") 
+    logger.info("MongoDB connection closed")
+
+async def get_db():
+    """Get the database instance."""
+    return Database.database 

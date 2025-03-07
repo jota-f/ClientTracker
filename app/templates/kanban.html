@@ -1,0 +1,314 @@
+{% extends "base.html" %}
+
+{% block title %}Kanban | ClientTracker{% endblock %}
+
+{% block content %}
+<div class="bg-white shadow rounded-lg overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <div class="flex justify-between items-center">
+            <h1 class="text-xl font-semibold text-gray-800">Quadro Kanban</h1>
+            <div class="flex space-x-2">
+                <a href="/tasks" class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <svg class="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
+                    </svg>
+                    Lista
+                </a>
+                <a href="/tasks/priority-matrix" class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <svg class="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM14 11a1 1 0 011 1v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1h-1a1 1 0 110-2h1v-1a1 1 0 011-1z" />
+                    </svg>
+                    PriorityMatrix™
+                </a>
+                <a href="/tasks/new" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                    </svg>
+                    Nova Tarefa
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <!-- Coluna: A Fazer -->
+            <div class="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
+                <div class="bg-gray-100 px-4 py-3 border-b border-gray-200">
+                    <h2 class="font-medium text-gray-800">A Fazer</h2>
+                </div>
+                <div class="kanban-column p-3 min-h-[70vh] max-h-[70vh] overflow-y-auto" id="todo">
+                    {% for task in tasks if task.status == "TODO" %}
+                    <div class="kanban-item mb-3 p-3 bg-white rounded shadow-sm border border-gray-200 cursor-move" data-id="{{ task.id }}">
+                        <div class="flex justify-between items-start">
+                            <h3 class="font-medium text-gray-800">{{ task.title }}</h3>
+                            {% if task.priority == "URGENT_IMPORTANT" %}
+                            <span class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">FAÇA AGORA</span>
+                            {% elif task.priority == "NOT_URGENT_IMPORTANT" %}
+                            <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">PLANEJE</span>
+                            {% elif task.priority == "URGENT_NOT_IMPORTANT" %}
+                            <span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">RESOLVA RÁPIDO</span>
+                            {% else %}
+                            <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">POSTERGUE</span>
+                            {% endif %}
+                        </div>
+                        {% if task.description %}
+                        <p class="mt-2 text-sm text-gray-600">{{ task.description|truncate(100) }}</p>
+                        {% endif %}
+                        {% if task.due_date %}
+                        <div class="mt-2 flex items-center text-xs text-gray-500">
+                            <svg class="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                            </svg>
+                            <span class="{% if task.due_date < now %}text-red-600 font-medium{% endif %}">
+                                {{ task.due_date.strftime('%d/%m/%Y') }}
+                            </span>
+                        </div>
+                        {% endif %}
+                        {% if task.client_name %}
+                        <div class="mt-2 flex items-center text-xs text-gray-500">
+                            <svg class="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd" />
+                            </svg>
+                            {{ task.client_name }}
+                        </div>
+                        {% endif %}
+                        <div class="mt-3 flex justify-end">
+                            <a href="/tasks/{{ task.id }}" class="text-xs text-blue-600 hover:text-blue-800">Ver detalhes</a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="p-4 text-center text-sm text-gray-500">
+                        Nenhuma tarefa nesta coluna
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Coluna: Em Progresso -->
+            <div class="bg-blue-50 rounded-lg border border-blue-200 overflow-hidden">
+                <div class="bg-blue-100 px-4 py-3 border-b border-blue-200">
+                    <h2 class="font-medium text-blue-800">Em Progresso</h2>
+                </div>
+                <div class="kanban-column p-3 min-h-[70vh] max-h-[70vh] overflow-y-auto" id="in-progress">
+                    {% for task in tasks if task.status == "IN_PROGRESS" %}
+                    <div class="kanban-item mb-3 p-3 bg-white rounded shadow-sm border border-gray-200 cursor-move" data-id="{{ task.id }}">
+                        <div class="flex justify-between items-start">
+                            <h3 class="font-medium text-gray-800">{{ task.title }}</h3>
+                            {% if task.priority == "URGENT_IMPORTANT" %}
+                            <span class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">FAÇA AGORA</span>
+                            {% elif task.priority == "NOT_URGENT_IMPORTANT" %}
+                            <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">PLANEJE</span>
+                            {% elif task.priority == "URGENT_NOT_IMPORTANT" %}
+                            <span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">RESOLVA RÁPIDO</span>
+                            {% else %}
+                            <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">POSTERGUE</span>
+                            {% endif %}
+                        </div>
+                        {% if task.description %}
+                        <p class="mt-2 text-sm text-gray-600">{{ task.description|truncate(100) }}</p>
+                        {% endif %}
+                        {% if task.due_date %}
+                        <div class="mt-2 flex items-center text-xs text-gray-500">
+                            <svg class="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                            </svg>
+                            <span class="{% if task.due_date < now %}text-red-600 font-medium{% endif %}">
+                                {{ task.due_date.strftime('%d/%m/%Y') }}
+                            </span>
+                        </div>
+                        {% endif %}
+                        {% if task.client_name %}
+                        <div class="mt-2 flex items-center text-xs text-gray-500">
+                            <svg class="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd" />
+                            </svg>
+                            {{ task.client_name }}
+                        </div>
+                        {% endif %}
+                        <div class="mt-3 flex justify-end">
+                            <a href="/tasks/{{ task.id }}" class="text-xs text-blue-600 hover:text-blue-800">Ver detalhes</a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="p-4 text-center text-sm text-gray-500">
+                        Nenhuma tarefa nesta coluna
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Coluna: Concluídas -->
+            <div class="bg-green-50 rounded-lg border border-green-200 overflow-hidden">
+                <div class="bg-green-100 px-4 py-3 border-b border-green-200">
+                    <h2 class="font-medium text-green-800">Concluídas</h2>
+                </div>
+                <div class="kanban-column p-3 min-h-[70vh] max-h-[70vh] overflow-y-auto" id="done">
+                    {% for task in tasks if task.status == "DONE" %}
+                    <div class="kanban-item mb-3 p-3 bg-white rounded shadow-sm border border-gray-200 cursor-move" data-id="{{ task.id }}">
+                        <div class="flex justify-between items-start">
+                            <h3 class="font-medium text-gray-800">{{ task.title }}</h3>
+                            {% if task.priority == "URGENT_IMPORTANT" %}
+                            <span class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">FAÇA AGORA</span>
+                            {% elif task.priority == "NOT_URGENT_IMPORTANT" %}
+                            <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">PLANEJE</span>
+                            {% elif task.priority == "URGENT_NOT_IMPORTANT" %}
+                            <span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">RESOLVA RÁPIDO</span>
+                            {% else %}
+                            <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">POSTERGUE</span>
+                            {% endif %}
+                        </div>
+                        {% if task.description %}
+                        <p class="mt-2 text-sm text-gray-600">{{ task.description|truncate(100) }}</p>
+                        {% endif %}
+                        {% if task.client_name %}
+                        <div class="mt-2 flex items-center text-xs text-gray-500">
+                            <svg class="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd" />
+                            </svg>
+                            {{ task.client_name }}
+                        </div>
+                        {% endif %}
+                        <div class="mt-3 flex justify-end">
+                            <a href="/tasks/{{ task.id }}" class="text-xs text-blue-600 hover:text-blue-800">Ver detalhes</a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="p-4 text-center text-sm text-gray-500">
+                        Nenhuma tarefa nesta coluna
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Coluna: Arquivadas -->
+            <div class="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
+                <div class="bg-gray-100 px-4 py-3 border-b border-gray-200">
+                    <h2 class="font-medium text-gray-800">Arquivadas</h2>
+                </div>
+                <div class="kanban-column p-3 min-h-[70vh] max-h-[70vh] overflow-y-auto" id="archived">
+                    {% for task in tasks if task.status == "ARCHIVED" %}
+                    <div class="kanban-item mb-3 p-3 bg-white rounded shadow-sm border border-gray-200 cursor-move" data-id="{{ task.id }}">
+                        <div class="flex justify-between items-start">
+                            <h3 class="font-medium text-gray-800">{{ task.title }}</h3>
+                            {% if task.priority == "URGENT_IMPORTANT" %}
+                            <span class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">FAÇA AGORA</span>
+                            {% elif task.priority == "NOT_URGENT_IMPORTANT" %}
+                            <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">PLANEJE</span>
+                            {% elif task.priority == "URGENT_NOT_IMPORTANT" %}
+                            <span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">RESOLVA RÁPIDO</span>
+                            {% else %}
+                            <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">POSTERGUE</span>
+                            {% endif %}
+                        </div>
+                        {% if task.description %}
+                        <p class="mt-2 text-sm text-gray-600">{{ task.description|truncate(100) }}</p>
+                        {% endif %}
+                        {% if task.client_name %}
+                        <div class="mt-2 flex items-center text-xs text-gray-500">
+                            <svg class="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd" />
+                            </svg>
+                            {{ task.client_name }}
+                        </div>
+                        {% endif %}
+                        <div class="mt-3 flex justify-end">
+                            <a href="/tasks/{{ task.id }}" class="text-xs text-blue-600 hover:text-blue-800">Ver detalhes</a>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="p-4 text-center text-sm text-gray-500">
+                        Nenhuma tarefa nesta coluna
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const kanbanColumns = document.querySelectorAll('.kanban-column');
+
+        kanbanColumns.forEach(column => {
+            column.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('bg-gray-100');
+            });
+            
+            column.addEventListener('dragleave', function() {
+                this.classList.remove('bg-gray-100');
+            });
+
+            column.addEventListener('drop', async function(e) {
+                e.preventDefault();
+                this.classList.remove('bg-gray-100');
+                const taskId = e.dataTransfer.getData('text');
+                const newStatus = this.id.replace('-', '_').toUpperCase();
+                
+                // Encontrar o elemento arrastado
+                const draggedItem = document.querySelector(`.kanban-item[data-id="${taskId}"]`);
+                if (draggedItem) {
+                    // Adicionar efeito visual durante o processamento
+                    draggedItem.classList.add('opacity-50');
+                }
+
+                try {
+                    const response = await fetch(`/api/v1/tasks/${taskId}/status`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ new_status: newStatus })
+                    });
+
+                    if (response.ok) {
+                        // Mover o item para a nova coluna sem recarregar a página
+                        if (draggedItem) {
+                            draggedItem.remove();
+                            this.appendChild(draggedItem);
+                            draggedItem.classList.remove('opacity-50');
+                            
+                            // Verificar se a coluna estava vazia
+                            const emptyMessage = this.querySelector('.text-center.text-sm.text-gray-500');
+                            if (emptyMessage) {
+                                emptyMessage.remove();
+                            }
+                        } else {
+                            window.location.reload();
+                        }
+                    } else {
+                        const errorData = await response.json();
+                        alert(`Erro ao atualizar status: ${errorData.detail}`);
+                        if (draggedItem) {
+                            draggedItem.classList.remove('opacity-50');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Erro ao atualizar status:', error);
+                    alert('Ocorreu um erro ao atualizar o status da tarefa.');
+                    if (draggedItem) {
+                        draggedItem.classList.remove('opacity-50');
+                    }
+                }
+            });
+        });
+
+        const kanbanItems = document.querySelectorAll('.kanban-item');
+
+        kanbanItems.forEach(item => {
+            item.setAttribute('draggable', true);
+
+            item.addEventListener('dragstart', function(e) {
+                e.dataTransfer.setData('text', this.getAttribute('data-id'));
+                this.classList.add('opacity-75');
+            });
+            
+            item.addEventListener('dragend', function() {
+                this.classList.remove('opacity-75');
+            });
+        });
+    });
+</script>
+{% endblock %} 

@@ -3,150 +3,185 @@
 {% block title %}Tarefas | ClientTracker{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h2">Gerenciamento de Tarefas</h1>
-        <div>
-            <a href="/tasks/kanban" class="btn btn-outline-primary me-2">
-                <i class="bi bi-kanban"></i> Visualização Kanban
-            </a>
-            <a href="/tasks/eisenhower" class="btn btn-outline-info me-2">
-                <i class="bi bi-grid-3x3"></i> Matriz Eisenhower
-            </a>
-            <a href="/tasks/new" class="btn btn-primary">
-                <i class="bi bi-plus-lg"></i> Nova Tarefa
-            </a>
+<div class="bg-white shadow rounded-lg overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <div class="flex justify-between items-center">
+            <h1 class="text-xl font-semibold text-gray-800">Gerenciamento de Tarefas</h1>
+            <div class="flex space-x-2">
+                <a href="/tasks/kanban" class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <svg class="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                    </svg>
+                    Kanban
+                </a>
+                <a href="/tasks/priority-matrix" class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <svg class="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM14 11a1 1 0 011 1v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1h-1a1 1 0 110-2h1v-1a1 1 0 011-1z" />
+                    </svg>
+                    PriorityMatrix™
+                </a>
+                <a href="/tasks/new" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                    </svg>
+                    Nova Tarefa
+                </a>
+            </div>
         </div>
     </div>
 
-    <div class="card shadow">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Título</th>
-                            <th>Prioridade</th>
-                            <th>Status</th>
-                            <th>Cliente</th>
-                            <th>Data de Vencimento</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for task in tasks %}
-                        <tr>
-                            <td>
-                                <a href="/tasks/{{ task.id }}" class="text-decoration-none fw-bold">
-                                    {{ task.title }}
-                                </a>
-                                {% if task.description %}
-                                <div class="small text-muted text-truncate" style="max-width: 250px;">
-                                    {{ task.description }}
-                                </div>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if task.priority == "URGENT_IMPORTANT" %}
-                                <span class="badge bg-danger">Urgente e Importante</span>
-                                {% elif task.priority == "NOT_URGENT_IMPORTANT" %}
-                                <span class="badge bg-primary">Importante</span>
-                                {% elif task.priority == "URGENT_NOT_IMPORTANT" %}
-                                <span class="badge bg-warning text-dark">Urgente</span>
-                                {% else %}
-                                <span class="badge bg-secondary">Normal</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if task.status == "TODO" %}
-                                <span class="badge bg-secondary">A Fazer</span>
-                                {% elif task.status == "IN_PROGRESS" %}
-                                <span class="badge bg-info">Em Progresso</span>
-                                {% elif task.status == "DONE" %}
-                                <span class="badge bg-success">Concluída</span>
-                                {% else %}
-                                <span class="badge bg-dark">Arquivada</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if task.client_name %}
-                                <a href="/clients/{{ task.client_id }}" class="text-decoration-none">
-                                    {{ task.client_name }}
-                                </a>
-                                {% else %}
-                                <span class="text-muted">Nenhum</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if task.due_date %}
-                                <span class="{% if task.due_date < now %}text-danger{% endif %}">
-                                    {{ task.due_date.strftime('%d/%m/%Y') }}
-                                </span>
-                                {% else %}
-                                <span class="text-muted">Sem data</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="actionDropdown{{ task.id }}" data-bs-toggle="dropdown" aria-expanded="false">
-                                        Ações
-                                    </button>
-                                    <ul class="dropdown-menu" aria-labelledby="actionDropdown{{ task.id }}">
-                                        <li><a class="dropdown-item" href="/tasks/{{ task.id }}">Ver Detalhes</a></li>
-                                        <li><a class="dropdown-item" href="/tasks/{{ task.id }}/edit">Editar</a></li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li>
-                                            <button class="dropdown-item text-danger delete-task" 
-                                                    data-id="{{ task.id }}" 
-                                                    data-title="{{ task.title }}">
-                                                Excluir
-                                            </button>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </td>
-                        </tr>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Título</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prioridade</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data de Vencimento</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for task in tasks %}
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <a href="/tasks/{{ task.id }}" class="text-blue-600 hover:text-blue-900 font-medium">
+                            {{ task.title }}
+                        </a>
+                        {% if task.description %}
+                        <div class="text-sm text-gray-500 truncate max-w-xs">
+                            {{ task.description }}
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if task.priority == "URGENT_IMPORTANT" %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                            FAÇA AGORA
+                        </span>
+                        {% elif task.priority == "NOT_URGENT_IMPORTANT" %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                            PLANEJE
+                        </span>
+                        {% elif task.priority == "URGENT_NOT_IMPORTANT" %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                            RESOLVA RÁPIDO
+                        </span>
                         {% else %}
-                        <tr>
-                            <td colspan="6" class="text-center py-4">
-                                <div class="alert alert-info mb-0">
-                                    <i class="bi bi-info-circle me-2"></i> Nenhuma tarefa encontrada.
-                                    <a href="/tasks/new" class="alert-link">Criar uma tarefa</a>.
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                            POSTERGUE
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if task.status == "TODO" %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                            A Fazer
+                        </span>
+                        {% elif task.status == "IN_PROGRESS" %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                            Em Progresso
+                        </span>
+                        {% elif task.status == "DONE" %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            Concluída
+                        </span>
+                        {% else %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-800 text-white">
+                            Arquivada
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if task.client_name %}
+                        <a href="/clients/{{ task.client_id }}" class="text-blue-600 hover:text-blue-900">
+                            {{ task.client_name }}
+                        </a>
+                        {% else %}
+                        <span class="text-gray-500">Nenhum</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if task.due_date %}
+                        <span class="{% if task.due_date < now %}text-red-600{% else %}text-gray-900{% endif %}">
+                            {{ task.due_date.strftime('%d/%m/%Y') }}
+                        </span>
+                        {% else %}
+                        <span class="text-gray-500">Sem data</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div class="relative" x-data="{ open: false }">
+                            <button @click="open = !open" class="text-gray-500 hover:text-gray-700">
+                                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                                </svg>
+                            </button>
+                            <div x-show="open" @click.away="open = false" class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="user-menu">
+                                <a href="/tasks/{{ task.id }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Ver Detalhes</a>
+                                <a href="/tasks/{{ task.id }}/edit" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Editar</a>
+                                <button class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 delete-task" data-id="{{ task.id }}" data-title="{{ task.title }}">Excluir</button>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="px-6 py-10 text-center">
+                        <p class="text-gray-500">Nenhuma tarefa encontrada</p>
+                        <a href="/tasks/new" class="mt-2 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                            Criar uma Tarefa
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 
 <!-- Modal de Confirmação de Exclusão -->
-<div class="modal fade" id="deleteTaskModal" tabindex="-1" aria-labelledby="deleteTaskModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="deleteTaskModalLabel">Confirmar Exclusão</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<div id="deleteTaskModal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
+    <div class="fixed inset-0 bg-black opacity-50"></div>
+    <div class="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:max-w-lg sm:w-full">
+        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div class="sm:flex sm:items-start">
+                <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                    <svg class="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Confirmar Exclusão</h3>
+                    <div class="mt-2">
+                        <p class="text-sm text-gray-500">
+                            Tem certeza que deseja excluir a tarefa <span id="taskTitle" class="font-medium"></span>?
+                        </p>
+                        <p class="text-sm text-red-500 mt-2">
+                            Esta ação não pode ser desfeita.
+                        </p>
+                    </div>
+                </div>
             </div>
-            <div class="modal-body">
-                <p>Tem certeza que deseja excluir a tarefa <span id="taskTitle" class="fw-bold"></span>?</p>
-                <p class="text-danger">Esta ação não pode ser desfeita.</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-danger" id="confirmDelete">Excluir</button>
-            </div>
+        </div>
+        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+            <button type="button" id="confirmDelete" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                Excluir
+            </button>
+            <button type="button" id="cancelDelete" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                Cancelar
+            </button>
         </div>
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@2.8.2/dist/alpine.min.js" defer></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const deleteModal = new bootstrap.Modal(document.getElementById('deleteTaskModal'));
+        const deleteModal = document.getElementById('deleteTaskModal');
         const confirmDeleteBtn = document.getElementById('confirmDelete');
+        const cancelDeleteBtn = document.getElementById('cancelDelete');
         let taskIdToDelete = null;
 
         // Configurar o modal de exclusão
@@ -157,8 +192,13 @@
                 
                 document.getElementById('taskTitle').textContent = taskTitle;
                 taskIdToDelete = taskId;
-                deleteModal.show();
+                deleteModal.classList.remove('hidden');
             });
+        });
+
+        // Fechar modal ao cancelar
+        cancelDeleteBtn.addEventListener('click', function() {
+            deleteModal.classList.add('hidden');
         });
 
         // Manipular a exclusão
@@ -173,7 +213,7 @@
                     });
 
                     if (response.ok) {
-                        deleteModal.hide();
+                        deleteModal.classList.add('hidden');
                         window.location.reload();
                     } else {
                         const errorData = await response.json();
