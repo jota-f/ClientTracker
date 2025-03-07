@@ -1,11 +1,16 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import connect_to_mongo, close_mongo_connection
+from app.api.routes import clients, tasks
+from app.models.client import Client
+from app.models.task import Task, TaskStatus, TaskPriority
+from app.services.client_service import ClientService
+from app.services.task_service import TaskService
+from app.services.dashboard_service import DashboardService
 import logging
-from app.api.routes import clients
 
 # Configure logging
 logging.basicConfig(
@@ -53,16 +58,118 @@ async def health_check():
     return {"status": "healthy", "version": settings.VERSION}
 
 # Include routers
-app.include_router(clients.router, prefix="/api/v1")
+app.include_router(
+    clients.router,
+    prefix="/api/v1/clients",
+    tags=["clients"]
+)
+
+app.include_router(
+    tasks.router,
+    prefix="/api/v1/tasks",
+    tags=["tasks"]
+)
 
 # Root route
 @app.get("/")
 async def index(request: Request):
-    # TODO: Get real stats from database
+    metrics = await DashboardService.get_dashboard_metrics()
+    followups = await ClientService.get_upcoming_followups()
+    
     context = {
         "request": request,
-        "total_clients": 0,
-        "pending_tasks": 0,
-        "today_followups": 0
+        "metrics": metrics,
+        "followups": followups
     }
-    return templates.TemplateResponse("index.html", context) 
+    return templates.TemplateResponse("index.html", context)
+
+# Client routes
+@app.get("/clients")
+async def list_clients_page(request: Request):
+    clients = await ClientService.get_all_clients()
+    return templates.TemplateResponse(
+        "clients.html",
+        {"request": request, "clients": clients}
+    )
+
+@app.get("/clients/new")
+async def new_client_page(request: Request):
+    logger.info("Acessando a página de novo cliente")
+    return templates.TemplateResponse(
+        "client_form.html",
+        {"request": request, "client": None}
+    )
+
+@app.get("/clients/{client_id}")
+async def client_detail_page(request: Request, client_id: str):
+    client = await ClientService.get_client_by_id(client_id)
+    if not client:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    return templates.TemplateResponse(
+        "client_detail.html",
+        {"request": request, "client": client}
+    )
+
+@app.get("/clients/{client_id}/edit")
+async def edit_client_page(request: Request, client_id: str):
+    client = await ClientService.get_client_by_id(client_id)
+    if not client:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado")
+    return templates.TemplateResponse(
+        "client_form.html",
+        {"request": request, "client": client}
+    )
+
+# Task routes
+@app.get("/tasks")
+async def list_tasks_page(request: Request):
+    tasks = await TaskService.get_all_tasks()
+    return templates.TemplateResponse(
+        "tasks.html",
+        {"request": request, "tasks": tasks}
+    )
+
+@app.get("/tasks/kanban")
+async def kanban_board_page(request: Request):
+    tasks = await TaskService.get_all_tasks()
+    return templates.TemplateResponse(
+        "kanban.html",
+        {"request": request, "tasks": tasks}
+    )
+
+@app.get("/tasks/eisenhower")
+async def eisenhower_matrix_page(request: Request):
+    matrix = await TaskService.get_eisenhower_matrix()
+    return templates.TemplateResponse(
+        "eisenhower.html",
+        {"request": request, "matrix": matrix}
+    )
+
+@app.get("/tasks/new")
+async def new_task_page(request: Request):
+    clients = await ClientService.get_all_clients()
+    return templates.TemplateResponse(
+        "task_form.html",
+        {"request": request, "task": None, "clients": clients}
+    )
+
+@app.get("/tasks/{task_id}")
+async def task_detail_page(request: Request, task_id: str):
+    task = await TaskService.get_task_by_id(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Tarefa não encontrada")
+    return templates.TemplateResponse(
+        "task_detail.html",
+        {"request": request, "task": task}
+    )
+
+@app.get("/tasks/{task_id}/edit")
+async def edit_task_page(request: Request, task_id: str):
+    task = await TaskService.get_task_by_id(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Tarefa não encontrada")
+    clients = await ClientService.get_all_clients()
+    return templates.TemplateResponse(
+        "task_form.html",
+        {"request": request, "task": task, "clients": clients}
+    ) 

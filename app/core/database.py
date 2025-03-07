@@ -12,10 +12,19 @@ class Database:
         """Extract database name from MongoDB URL"""
         return settings.MONGODB_URL.split('/')[-1].split('?')[0]
 
+    @classmethod
+    async def connect(cls):
+        cls.client = AsyncIOMotorClient(settings.MONGODB_URL)
+        cls.database = cls.client["clienttracker"]
+
+    @classmethod
+    async def close(cls):
+        cls.client.close()
+
 async def connect_to_mongo():
     """Create database connection."""
     logger.info("Connecting to MongoDB...")
-    Database.client = AsyncIOMotorClient(settings.MONGODB_URL)
+    await Database.connect()
     try:
         # Verify the connection
         await Database.client.admin.command('ping')
@@ -28,6 +37,5 @@ async def connect_to_mongo():
 async def close_mongo_connection():
     """Close database connection."""
     logger.info("Closing MongoDB connection...")
-    if Database.client:
-        Database.client.close()
-        logger.info("MongoDB connection closed") 
+    await Database.close()
+    logger.info("MongoDB connection closed") 

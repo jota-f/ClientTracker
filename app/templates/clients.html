@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Clientes - ClientTracker{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold">Clientes</h1>
+        <a href="/clients/new"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
+            <span>Novo Cliente</span>
+        </a>
+    </div>
+
+    <div class="bg-white shadow-md rounded-lg overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Empresa</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider group relative">
+                        Score RFM
+                        <div class="hidden group-hover:block absolute z-10 bg-black text-white text-xs rounded p-2 w-64 mt-1">
+                            Pontuação baseada em:
+                            <br>- R (Recência): Tempo desde último contato
+                            <br>- P (Potencial): Valor estimado do cliente
+                            <br>- E (Engajamento): Número de interações
+                            <br><br>Pontuação ≥ 10: Prioridade máxima (contato semanal)
+                        </div>
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Próximo Follow-up</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for client in clients %}
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900">{{ client.name }}</div>
+                        <div class="text-sm text-gray-500">{{ client.email }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">{{ client.company }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            {% if client.status == 'ACTIVE' %}bg-green-100 text-green-800
+                            {% elif client.status == 'LEAD' %}bg-blue-100 text-blue-800
+                            {% elif client.status == 'OPPORTUNITY' %}bg-yellow-100 text-yellow-800
+                            {% elif client.status == 'CUSTOMER' %}bg-purple-100 text-purple-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ client.status }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if client.rfm_scores %}
+                        <div class="relative group">
+                            <span class="{% if client.rfm_scores.total >= 10 %}text-green-600{% elif client.rfm_scores.total >= 7 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                                {{ client.rfm_scores.total }}
+                            </span>
+                            <div class="text-xs text-gray-500">
+                                <span class="group relative">
+                                    R:{{ client.rfm_scores.recency }}
+                                    <div class="hidden group-hover:block absolute z-10 bg-black text-white text-xs rounded p-2 w-48">
+                                        Recência do último contato:
+                                        <br>5 pts: Menos de 1 mês
+                                        <br>3 pts: 1-3 meses
+                                        <br>1 pt: Mais de 3 meses
+                                    </div>
+                                </span>
+                                <span class="group relative ml-2">
+                                    P:{{ client.rfm_scores.potential }}
+                                    <div class="hidden group-hover:block absolute z-10 bg-black text-white text-xs rounded p-2 w-48">
+                                        Potencial do cliente:
+                                        <br>5 pts: Alto potencial (5)
+                                        <br>3 pts: Médio potencial (3)
+                                        <br>1 pt: Baixo potencial (1)
+                                    </div>
+                                </span>
+                                <span class="group relative ml-2">
+                                    E:{{ client.rfm_scores.engagement }}
+                                    <div class="hidden group-hover:block absolute z-10 bg-black text-white text-xs rounded p-2 w-48">
+                                        Engajamento (interações):
+                                        <br>5 pts: Mais de 5 interações
+                                        <br>3 pts: 3-4 interações
+                                        <br>1 pt: 1-2 interações
+                                        <br>0 pt: Sem interações
+                                    </div>
+                                </span>
+                            </div>
+                        </div>
+                        {% else %}
+                        <span class="text-gray-400">N/A</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">{{ client.next_followup.strftime('%d/%m/%Y') }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <a href="/clients/{{ client.id }}" class="text-blue-600 hover:text-blue-900 mr-3">Ver</a>
+                        <a href="/clients/{{ client.id }}/edit" class="text-indigo-600 hover:text-indigo-900 mr-3">Editar</a>
+                        <button onclick="deleteClient('{{ client.id }}')" class="text-red-600 hover:text-red-900">Excluir</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+async function deleteClient(clientId) {
+    if (!confirm('Tem certeza que deseja excluir este cliente?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/v1/clients/${clientId}`, {
+            method: 'DELETE',
+        });
+
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            const error = await response.json();
+            alert(`Erro ao excluir cliente: ${error.detail || 'Erro desconhecido'}`);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Erro ao excluir cliente');
+    }
+}
+</script>
+
+<style>
+.group:hover .group-hover\:block {
+    display: block;
+}
+</style>
+{% endblock %} 

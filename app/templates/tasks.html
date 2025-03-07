@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Tarefas | ClientTracker{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">Gerenciamento de Tarefas</h1>
+        <div>
+            <a href="/tasks/kanban" class="btn btn-outline-primary me-2">
+                <i class="bi bi-kanban"></i> Visualização Kanban
+            </a>
+            <a href="/tasks/eisenhower" class="btn btn-outline-info me-2">
+                <i class="bi bi-grid-3x3"></i> Matriz Eisenhower
+            </a>
+            <a href="/tasks/new" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> Nova Tarefa
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Título</th>
+                            <th>Prioridade</th>
+                            <th>Status</th>
+                            <th>Cliente</th>
+                            <th>Data de Vencimento</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in tasks %}
+                        <tr>
+                            <td>
+                                <a href="/tasks/{{ task.id }}" class="text-decoration-none fw-bold">
+                                    {{ task.title }}
+                                </a>
+                                {% if task.description %}
+                                <div class="small text-muted text-truncate" style="max-width: 250px;">
+                                    {{ task.description }}
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if task.priority == "URGENT_IMPORTANT" %}
+                                <span class="badge bg-danger">Urgente e Importante</span>
+                                {% elif task.priority == "NOT_URGENT_IMPORTANT" %}
+                                <span class="badge bg-primary">Importante</span>
+                                {% elif task.priority == "URGENT_NOT_IMPORTANT" %}
+                                <span class="badge bg-warning text-dark">Urgente</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Normal</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if task.status == "TODO" %}
+                                <span class="badge bg-secondary">A Fazer</span>
+                                {% elif task.status == "IN_PROGRESS" %}
+                                <span class="badge bg-info">Em Progresso</span>
+                                {% elif task.status == "DONE" %}
+                                <span class="badge bg-success">Concluída</span>
+                                {% else %}
+                                <span class="badge bg-dark">Arquivada</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if task.client_name %}
+                                <a href="/clients/{{ task.client_id }}" class="text-decoration-none">
+                                    {{ task.client_name }}
+                                </a>
+                                {% else %}
+                                <span class="text-muted">Nenhum</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if task.due_date %}
+                                <span class="{% if task.due_date < now %}text-danger{% endif %}">
+                                    {{ task.due_date.strftime('%d/%m/%Y') }}
+                                </span>
+                                {% else %}
+                                <span class="text-muted">Sem data</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="actionDropdown{{ task.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Ações
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="actionDropdown{{ task.id }}">
+                                        <li><a class="dropdown-item" href="/tasks/{{ task.id }}">Ver Detalhes</a></li>
+                                        <li><a class="dropdown-item" href="/tasks/{{ task.id }}/edit">Editar</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <button class="dropdown-item text-danger delete-task" 
+                                                    data-id="{{ task.id }}" 
+                                                    data-title="{{ task.title }}">
+                                                Excluir
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <div class="alert alert-info mb-0">
+                                    <i class="bi bi-info-circle me-2"></i> Nenhuma tarefa encontrada.
+                                    <a href="/tasks/new" class="alert-link">Criar uma tarefa</a>.
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Exclusão -->
+<div class="modal fade" id="deleteTaskModal" tabindex="-1" aria-labelledby="deleteTaskModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteTaskModalLabel">Confirmar Exclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir a tarefa <span id="taskTitle" class="fw-bold"></span>?</p>
+                <p class="text-danger">Esta ação não pode ser desfeita.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">Excluir</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteTaskModal'));
+        const confirmDeleteBtn = document.getElementById('confirmDelete');
+        let taskIdToDelete = null;
+
+        // Configurar o modal de exclusão
+        document.querySelectorAll('.delete-task').forEach(button => {
+            button.addEventListener('click', function() {
+                const taskId = this.getAttribute('data-id');
+                const taskTitle = this.getAttribute('data-title');
+                
+                document.getElementById('taskTitle').textContent = taskTitle;
+                taskIdToDelete = taskId;
+                deleteModal.show();
+            });
+        });
+
+        // Manipular a exclusão
+        confirmDeleteBtn.addEventListener('click', async function() {
+            if (taskIdToDelete) {
+                try {
+                    const response = await fetch(`/api/v1/tasks/${taskIdToDelete}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+
+                    if (response.ok) {
+                        deleteModal.hide();
+                        window.location.reload();
+                    } else {
+                        const errorData = await response.json();
+                        alert(`Erro ao excluir: ${errorData.detail}`);
+                    }
+                } catch (error) {
+                    console.error('Erro ao excluir tarefa:', error);
+                    alert('Ocorreu um erro ao excluir a tarefa.');
+                }
+            }
+        });
+    });
+</script>
+{% endblock %} 
