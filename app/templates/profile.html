@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+
+{% block title %}Perfil - ClientTracker{% endblock %}
+
+{% block content %}
+<div class="py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <h1 class="text-3xl font-bold text-gray-900 mb-8">Perfil do Usuário</h1>
+    
+    <div id="success-message" class="mb-6 p-4 bg-green-50 text-green-700 rounded-md hidden">
+        Perfil atualizado com sucesso!
+    </div>
+    
+    <div id="error-message" class="mb-6 p-4 bg-red-50 text-red-700 rounded-md hidden">
+        <!-- Mensagem de erro será exibida aqui via JavaScript -->
+    </div>
+    
+    <div class="flex flex-col lg:flex-row gap-8">
+        <!-- Informações do Perfil -->
+        <div class="bg-white shadow rounded-lg p-6 flex-1">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">Informações Pessoais</h2>
+            
+            <form id="profile-form" class="space-y-5">
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-700 mb-1">
+                        Nome de usuário
+                    </label>
+                    <input type="text" id="username" name="username" 
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                </div>
+                
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
+                        Email
+                    </label>
+                    <input type="email" id="email" name="email" 
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                </div>
+                
+                <div>
+                    <label for="full_name" class="block text-sm font-medium text-gray-700 mb-1">
+                        Nome completo
+                    </label>
+                    <input type="text" id="full_name" name="full_name" 
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                </div>
+                
+                <div>
+                    <label for="notification_preference" class="block text-sm font-medium text-gray-700 mb-1">
+                        Preferência de notificação
+                    </label>
+                    <select id="notification_preference" name="notification_preference" 
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <option value="email">Email</option>
+                        <option value="in_app">No aplicativo</option>
+                        <option value="both">Ambos</option>
+                        <option value="none">Nenhum</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <button type="submit" 
+                        class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Salvar alterações
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Alterar Senha -->
+        <div class="bg-white shadow rounded-lg p-6 flex-1">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">Alterar Senha</h2>
+            
+            <div id="password-success-message" class="mb-4 p-4 bg-green-50 text-green-700 rounded-md hidden">
+                Senha alterada com sucesso!
+            </div>
+            
+            <div id="password-error-message" class="mb-4 p-4 bg-red-50 text-red-700 rounded-md hidden">
+                <!-- Mensagem de erro será exibida aqui via JavaScript -->
+            </div>
+            
+            <form id="password-form" class="space-y-5">
+                <div>
+                    <label for="current_password" class="block text-sm font-medium text-gray-700 mb-1">
+                        Senha atual
+                    </label>
+                    <input type="password" id="current_password" name="current_password" required
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                </div>
+                
+                <div>
+                    <label for="new_password" class="block text-sm font-medium text-gray-700 mb-1">
+                        Nova senha
+                    </label>
+                    <input type="password" id="new_password" name="new_password" required
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                </div>
+                
+                <div>
+                    <label for="confirm_password" class="block text-sm font-medium text-gray-700 mb-1">
+                        Confirmar nova senha
+                    </label>
+                    <input type="password" id="confirm_password" name="confirm_password" required
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                </div>
+                
+                <div>
+                    <button type="submit" 
+                        class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Alterar senha
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Integrações de Calendário -->
+    <div class="mt-8 bg-white shadow rounded-lg p-6">
+        <h2 class="text-lg font-medium text-gray-900 mb-4">Integrações de Calendário</h2>
+        
+        <div id="calendar-error-message" class="mb-4 p-4 bg-red-50 text-red-700 rounded-md hidden">
+            <!-- Mensagem de erro será exibida aqui via JavaScript -->
+        </div>
+        
+        <div class="space-y-4">
+            <div class="flex items-center justify-between border-b pb-4">
+                <div>
+                    <h3 class="text-md font-medium text-gray-800">Google Calendar</h3>
+                    <p class="text-sm text-gray-500">Sincronize eventos com sua conta do Google</p>
+                </div>
+                <div id="google-calendar-status">
+                    <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm">Não conectado</span>
+                    <button id="connect-google" class="ml-3 text-sm text-indigo-600 hover:text-indigo-500">
+                        Conectar
+                    </button>
+                </div>
+            </div>
+            
+            <div class="flex items-center justify-between pt-2">
+                <div>
+                    <h3 class="text-md font-medium text-gray-800">Microsoft Outlook</h3>
+                    <p class="text-sm text-gray-500">Sincronize eventos com sua conta da Microsoft</p>
+                </div>
+                <div id="outlook-calendar-status">
+                    <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm">Não conectado</span>
+                    <button id="connect-outlook" class="ml-3 text-sm text-indigo-600 hover:text-indigo-500">
+                        Conectar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Verifica se o usuário está autenticado
+        if (!requireAuth()) {
+            return;
+        }
+        
+        const profileForm = document.getElementById('profile-form');
+        const passwordForm = document.getElementById('password-form');
+        const successMessage = document.getElementById('success-message');
+        const errorMessage = document.getElementById('error-message');
+        const passwordSuccessMessage = document.getElementById('password-success-message');
+        const passwordErrorMessage = document.getElementById('password-error-message');
+        
+        // Obter os dados do usuário
+        try {
+            const response = await fetch('/api/auth/me', {
+                method: 'GET'
+                // O token será adicionado automaticamente pelo nosso auth.js
+            });
+            
+            if (!response.ok) {
+                throw new Error('Falha ao obter dados do usuário');
+            }
+            
+            const userData = await response.json();
+            
+            // Preencher os campos do formulário
+            document.getElementById('username').value = userData.username || '';
+            document.getElementById('email').value = userData.email || '';
+            document.getElementById('full_name').value = userData.full_name || '';
+            document.getElementById('notification_preference').value = userData.notification_preference || 'email';
+            
+            // Verificar integrações de calendário
+            if (userData.calendar_integration?.type === 'google' && userData.calendar_integration?.enabled) {
+                document.querySelector('#google-calendar-status span').textContent = 'Conectado';
+                document.querySelector('#google-calendar-status span').classList.add('bg-green-100');
+                document.querySelector('#google-calendar-status span').classList.add('text-green-800');
+                document.querySelector('#google-calendar-status span').classList.remove('bg-gray-100');
+                document.querySelector('#google-calendar-status span').classList.remove('text-gray-800');
+                document.querySelector('#google-calendar-status button').textContent = 'Desconectar';
+            }
+            
+            if (userData.calendar_integration?.type === 'outlook' && userData.calendar_integration?.enabled) {
+                document.querySelector('#outlook-calendar-status span').textContent = 'Conectado';
+                document.querySelector('#outlook-calendar-status span').classList.add('bg-green-100');
+                document.querySelector('#outlook-calendar-status span').classList.add('text-green-800');
+                document.querySelector('#outlook-calendar-status span').classList.remove('bg-gray-100');
+                document.querySelector('#outlook-calendar-status span').classList.remove('text-gray-800');
+                document.querySelector('#outlook-calendar-status button').textContent = 'Desconectar';
+            }
+            
+        } catch (error) {
+            console.error('Erro:', error);
+            errorMessage.textContent = error.message;
+            errorMessage.classList.remove('hidden');
+        }
+        
+        // Form de Atualização de Perfil
+        profileForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            successMessage.classList.add('hidden');
+            errorMessage.classList.add('hidden');
+            
+            try {
+                const updateData = {
+                    username: document.getElementById('username').value,
+                    email: document.getElementById('email').value,
+                    full_name: document.getElementById('full_name').value || null,
+                    notification_preference: document.getElementById('notification_preference').value
+                };
+                
+                const response = await fetch('/api/auth/me', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                        // O token será adicionado automaticamente pelo nosso auth.js
+                    },
+                    body: JSON.stringify(updateData)
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Erro ao atualizar perfil');
+                }
+                
+                successMessage.classList.remove('hidden');
+                
+                // Atualizar usuário armazenado
+                const user = JSON.parse(localStorage.getItem('user'));
+                user.username = data.username;
+                user.email = data.email;
+                localStorage.setItem('user', JSON.stringify(user));
+                
+            } catch (error) {
+                errorMessage.textContent = error.message;
+                errorMessage.classList.remove('hidden');
+            }
+        });
+        
+        // Form de Alteração de Senha
+        passwordForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            passwordSuccessMessage.classList.add('hidden');
+            passwordErrorMessage.classList.add('hidden');
+            
+            const currentPassword = document.getElementById('current_password').value;
+            const newPassword = document.getElementById('new_password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+            
+            if (newPassword !== confirmPassword) {
+                passwordErrorMessage.textContent = 'As senhas não coincidem';
+                passwordErrorMessage.classList.remove('hidden');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/auth/change-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                        // O token será adicionado automaticamente pelo nosso auth.js
+                    },
+                    body: JSON.stringify({
+                        current_password: currentPassword,
+                        new_password: newPassword,
+                        confirm_password: confirmPassword
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Erro ao alterar senha');
+                }
+                
+                passwordSuccessMessage.classList.remove('hidden');
+                passwordForm.reset();
+                
+            } catch (error) {
+                passwordErrorMessage.textContent = error.message;
+                passwordErrorMessage.classList.remove('hidden');
+            }
+        });
+        
+        // Conectar Google Calendar (será implementado na Sprint 4)
+        document.getElementById('connect-google').addEventListener('click', function() {
+            alert('A integração com o Google Calendar será implementada na Sprint 4');
+        });
+        
+        // Conectar Outlook Calendar (será implementado na Sprint 4)
+        document.getElementById('connect-outlook').addEventListener('click', function() {
+            alert('A integração com o Microsoft Outlook será implementada na Sprint 4');
+        });
+    });
+</script>
+{% endblock %} 

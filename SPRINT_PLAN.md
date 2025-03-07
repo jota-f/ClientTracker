@@ -1,41 +1,41 @@
 # ClientTracker - Plano de Sprints
 
-## Sprint 1: Setup & Arquitetura Básica (1 semana)
+## Sprint 1: Setup & Arquitetura Básica (1 semana) ✅
 ### Tarefas
-- Configurar repositório, ambiente virtual e estrutura do projeto
-- Configurar FastAPI, criar módulo para instância da aplicação e integrar MongoDB
-- Criar endpoints básicos (health check) e página inicial com Jinja2
+- ✅ Configurar repositório, ambiente virtual e estrutura do projeto
+- ✅ Configurar FastAPI, criar módulo para instância da aplicação e integrar MongoDB
+- ✅ Criar endpoints básicos (health check) e página inicial com Jinja2
 
 ### Entregáveis
-- Projeto inicial funcional com FastAPI e conexão MongoDB
-- Página inicial renderizada via Jinja2
+- ✅ Projeto inicial funcional com FastAPI e conexão MongoDB
+- ✅ Página inicial renderizada via Jinja2
 
-## Sprint 2: Módulo de Clientes e Modelo RFM (1-2 semanas)
+## Sprint 2: Módulo de Clientes e Modelo RFM (1-2 semanas) ✅
 ### Tarefas
-- Implementar operações CRUD para clientes com MongoDB
-- Definir e integrar campos essenciais (Nome, Empresa, etc.)
-- Desenvolver lógica de pontuação RFM e atualizar modelo de cliente
-- Criar dashboard HTML para visualização dos clientes e pontuações
+- ✅ Implementar operações CRUD para clientes com MongoDB
+- ✅ Definir e integrar campos essenciais (Nome, Empresa, etc.)
+- ✅ Desenvolver lógica de pontuação RFM e atualizar modelo de cliente
+- ✅ Criar dashboard HTML para visualização dos clientes e pontuações
 
 ### Entregáveis
-- Módulo de gestão de clientes funcional
-- Cálculo automático do score RFM e dashboard
+- ✅ Módulo de gestão de clientes funcional
+- ✅ Cálculo automático do score RFM e dashboard
 
-## Sprint 3: Módulo de Tarefas e Matriz Eisenhower (1-2 semanas)
+## Sprint 3: Módulo de Tarefas e Matriz Eisenhower (1-2 semanas) ✅
 ### Tarefas
-- Modelar e implementar operações CRUD para tarefas
-- Desenvolver interface visual Kanban para gerenciamento
-- Integrar funcionalidades drag-and-drop
-- Permitir associação de tarefas aos clientes
+- ✅ Modelar e implementar operações CRUD para tarefas
+- ✅ Desenvolver interface visual Kanban para gerenciamento
+- ✅ Integrar funcionalidades drag-and-drop
+- ✅ Permitir associação de tarefas aos clientes
 
 ### Entregáveis
-- Sistema de gerenciamento de tarefas estilo Trello
-- Funcionalidades de organização e reordenação
+- ✅ Sistema de gerenciamento de tarefas estilo Trello
+- ✅ Funcionalidades de organização e reordenação
 
-## Sprint 4: Lembretes, Automação e Integrações (1 semana)
+## Sprint 4: Lembretes, Automação e Integrações (1 semana) 🔄
 ### Tarefas
-- Integrar Google Calendar para agendamento
-- Configurar sistema de notificações (email/SMS)
+- Integrar Google Calendar e outlook para agendamento
+- Configurar sistema de notificações (email)
 - Implementar periodicidade de contato baseada no RFM
 
 ### Entregáveis
@@ -52,9 +52,10 @@
 - Módulo de relatórios completo
 - Interface aprimorada e testada
 
-## Sprint 6: Segurança e Deployment (1 semana)
+## Sprint 6: Segurança e Deployment (1 semana) 🔄
 ### Tarefas
-- Implementar autenticação e MFA
+- ✅ Implementar autenticação (adiantado e concluído)
+- Implementar MFA
 - Garantir criptografia dos dados
 - Escrever testes automatizados
 - Preparar deployment com Docker
