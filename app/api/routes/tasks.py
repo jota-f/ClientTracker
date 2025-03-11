@@ -1,6 +1,8 @@
-from fastapi import APIRouter, HTTPException, status, Body
+from fastapi import APIRouter, HTTPException, status, Body, Depends
 from app.models.task import Task, TaskStatus, TaskPriority, TaskComment
 from app.services.task_service import TaskService
+from app.models.user import User
+from app.core.dependencies import get_current_user
 from typing import List, Optional
 import logging
 from datetime import timezone, datetime
@@ -10,10 +12,14 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 @router.post("/", response_model=Task, status_code=status.HTTP_201_CREATED)
-async def create_task(task_data: dict = Body(...)):
+async def create_task(task_data: dict = Body(...), current_user: User = Depends(get_current_user)):
     """Cria uma nova tarefa."""
     try:
         logger.info(f"Recebendo dados para criar tarefa: {task_data}")
+        
+        # Adicionar o user_id do usuário autenticado
+        task_data["user_id"] = str(current_user.id)
+        logger.info(f"Adicionando user_id do usuário autenticado: {task_data['user_id']}")
         
         # Verificar e tratar os dados necessários
         if "priority" not in task_data or not task_data["priority"]:
@@ -39,7 +45,7 @@ async def create_task(task_data: dict = Body(...)):
         
         # Remover campos vazios opcionais
         for key in list(task_data.keys()):
-            if task_data[key] == "" and key not in ["title", "priority", "status"]:
+            if task_data[key] == "" and key not in ["title", "priority", "status", "user_id"]:
                 task_data[key] = None
         
         logger.info(f"Dados processados: {task_data}")
@@ -92,9 +98,9 @@ async def delete_task(task_id: str):
     return None
 
 @router.get("/", response_model=List[Task])
-async def get_all_tasks():
-    """Recupera todas as tarefas."""
-    return await TaskService.get_all_tasks()
+async def get_all_tasks(current_user: User = Depends(get_current_user)):
+    """Recupera todas as tarefas do usuário autenticado."""
+    return await TaskService.get_all_tasks(user_id=str(current_user.id))
 
 @router.get("/client/{client_id}", response_model=List[Task])
 async def get_client_tasks(client_id: str):
@@ -134,9 +140,9 @@ async def update_status(task_id: str, new_status: TaskStatus = Body(..., embed=T
     return updated_task
 
 @router.get("/eisenhower", response_model=dict)
-async def get_eisenhower_matrix():
-    """Recupera tarefas organizadas pela Matriz Eisenhower."""
-    return await TaskService.get_eisenhower_matrix()
+async def get_eisenhower_matrix(current_user: User = Depends(get_current_user)):
+    """Recupera tarefas organizadas pela Matriz Eisenhower para o usuário autenticado."""
+    return await TaskService.get_eisenhower_matrix(user_id=str(current_user.id))
 
 @router.patch("/{task_id}/priority", response_model=Task)
 async def update_priority(task_id: str, new_priority: TaskPriority = Body(..., embed=True)):

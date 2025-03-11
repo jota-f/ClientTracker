@@ -40,6 +40,7 @@ class Task(BaseModel):
     client_id: Optional[PyObjectId] = None
     client_name: Optional[str] = None  # Para facilitar a exibição
     assignee: Optional[str] = None
+    user_id: Optional[str] = None  # ID do usuário proprietário da tarefa
     comments: List[TaskComment] = []
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

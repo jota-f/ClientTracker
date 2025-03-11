@@ -152,8 +152,10 @@ app.add_middleware(AuthMiddleware)
 # Root route
 @app.get("/")
 async def index(request: Request, current_user: User = Depends(get_current_user)):
-    metrics = await DashboardService.get_dashboard_metrics()
-    followups = await ClientService.get_upcoming_followups()
+    # Obter métricas apenas do usuário autenticado
+    metrics = await DashboardService.get_dashboard_metrics(user_id=str(current_user.id))
+    # Obter apenas follow-ups do usuário autenticado
+    followups = await ClientService.get_upcoming_followups(user_id=str(current_user.id))
     
     context = {
         "request": request,
@@ -190,7 +192,8 @@ async def auth_debug_page(request: Request):
 # Client routes
 @app.get("/clients")
 async def list_clients_page(request: Request, current_user: User = Depends(get_current_user)):
-    clients = await ClientService.get_all_clients()
+    # Obter apenas clientes do usuário autenticado
+    clients = await ClientService.get_all_clients(user_id=str(current_user.id))
     return templates.TemplateResponse(
         "clients.html",
         {"request": request, "clients": clients, "user": current_user}
@@ -209,6 +212,12 @@ async def client_detail_page(request: Request, client_id: str, current_user: Use
     client = await ClientService.get_client_by_id(client_id)
     if not client:
         raise HTTPException(status_code=404, detail="Cliente não encontrado")
+        
+    # Verificar se o cliente pertence ao usuário atual
+    if client.user_id and client.user_id != str(current_user.id):
+        logger.warning(f"Tentativa de acesso não autorizado ao cliente {client_id} pelo usuário {current_user.id}")
+        raise HTTPException(status_code=403, detail="Você não tem permissão para acessar este cliente")
+        
     now = datetime.now(timezone.utc)
     return templates.TemplateResponse(
         "client_detail.html",
@@ -220,6 +229,12 @@ async def edit_client_page(request: Request, client_id: str, current_user: User 
     client = await ClientService.get_client_by_id(client_id)
     if not client:
         raise HTTPException(status_code=404, detail="Cliente não encontrado")
+        
+    # Verificar se o cliente pertence ao usuário atual
+    if client.user_id and client.user_id != str(current_user.id):
+        logger.warning(f"Tentativa de edição não autorizada do cliente {client_id} pelo usuário {current_user.id}")
+        raise HTTPException(status_code=403, detail="Você não tem permissão para editar este cliente")
+        
     return templates.TemplateResponse(
         "client_form.html",
         {"request": request, "client": client, "user": current_user}
@@ -228,7 +243,8 @@ async def edit_client_page(request: Request, client_id: str, current_user: User 
 # Task routes
 @app.get("/tasks")
 async def list_tasks_page(request: Request, current_user: User = Depends(get_current_user)):
-    tasks = await TaskService.get_all_tasks()
+    # Obter apenas tarefas do usuário autenticado
+    tasks = await TaskService.get_all_tasks(user_id=str(current_user.id))
     now = datetime.now(timezone.utc)
     return templates.TemplateResponse(
         "tasks.html",
@@ -237,7 +253,8 @@ async def list_tasks_page(request: Request, current_user: User = Depends(get_cur
 
 @app.get("/tasks/kanban")
 async def kanban_board_page(request: Request, current_user: User = Depends(get_current_user)):
-    tasks = await TaskService.get_all_tasks()
+    # Obter apenas tarefas do usuário autenticado
+    tasks = await TaskService.get_all_tasks(user_id=str(current_user.id))
     now = datetime.now(timezone.utc)
     return templates.TemplateResponse(
         "kanban.html",
@@ -246,7 +263,8 @@ async def kanban_board_page(request: Request, current_user: User = Depends(get_c
 
 @app.get("/tasks/eisenhower")
 async def eisenhower_matrix_page(request: Request, current_user: User = Depends(get_current_user)):
-    matrix = await TaskService.get_eisenhower_matrix()
+    # Obter matriz com tarefas do usuário autenticado
+    matrix = await TaskService.get_eisenhower_matrix(user_id=str(current_user.id))
     return templates.TemplateResponse(
         "eisenhower.html",
         {"request": request, "matrix": matrix, "user": current_user}
@@ -254,7 +272,8 @@ async def eisenhower_matrix_page(request: Request, current_user: User = Depends(
 
 @app.get("/tasks/priority-matrix")
 async def priority_matrix_page(request: Request, current_user: User = Depends(get_current_user)):
-    matrix = await TaskService.get_eisenhower_matrix()
+    # Obter matriz com tarefas do usuário autenticado
+    matrix = await TaskService.get_eisenhower_matrix(user_id=str(current_user.id))
     now = datetime.now(timezone.utc)
     return templates.TemplateResponse(
         "priority_matrix.html",

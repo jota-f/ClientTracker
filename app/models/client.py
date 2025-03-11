@@ -74,6 +74,7 @@ class Client(BaseModel):
     interaction_history: List[Interaction] = []
     pending_tasks: List[Task] = []
     rfm_scores: Optional[RFMScores] = None
+    user_id: Optional[str] = None  # ID do usuário proprietário do cliente
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 

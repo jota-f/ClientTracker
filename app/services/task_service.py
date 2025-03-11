@@ -20,6 +20,10 @@ class TaskService:
             logger.info(f"Iniciando criação de tarefa no serviço: {task_data.get('title')}")
             logger.info(f"Dados completos: {task_data}")
             
+            # Verifica se o user_id está presente
+            if "user_id" not in task_data or not task_data["user_id"]:
+                logger.warning("Atenção: task_data não contém user_id. A tarefa será criada sem proprietário.")
+            
             # Se houver um client_id, verifica se o cliente existe e atualiza o client_name
             if task_data.get("client_id"):
                 try:
@@ -58,6 +62,7 @@ class TaskService:
                 "client_id": None,
                 "client_name": None,
                 "assignee": None,
+                "user_id": None,
                 "comments": []
             }
             
@@ -82,6 +87,10 @@ class TaskService:
                     if isinstance(task_data[date_field], datetime) and task_data[date_field].tzinfo is None:
                         task_data[date_field] = task_data[date_field].replace(tzinfo=timezone.utc)
             
+            # Certifica-se de que user_id seja string se estiver presente e não for None
+            if "user_id" in task_data and task_data["user_id"] is not None:
+                task_data["user_id"] = str(task_data["user_id"])
+                
             logger.info(f"Dados finais da tarefa: {task_data}")
             
             # Insere a tarefa no banco de dados
@@ -160,14 +169,33 @@ class TaskService:
             return False
 
     @staticmethod
-    async def get_all_tasks() -> List[Task]:
-        """Recupera todas as tarefas."""
+    async def get_all_tasks(user_id: str = None) -> List[Task]:
+        """Recupera todas as tarefas, opcionalmente filtradas por usuário."""
         try:
             db = await get_db()
-            tasks_data = await db[TaskService.COLLECTION].find().to_list(length=None)
-            return [Task(**task) for task in tasks_data]
+            
+            # Criar filtro baseado no user_id, se fornecido
+            query = {}
+            if user_id:
+                query["user_id"] = user_id
+                logger.info(f"Filtrando tarefas por user_id: {user_id}")
+            
+            # Buscar tarefas com o filtro aplicado
+            tasks_data = await db[TaskService.COLLECTION].find(query).to_list(length=None)
+            logger.info(f"Recuperadas {len(tasks_data)} tarefas")
+            
+            tasks = []
+            for task_data in tasks_data:
+                try:
+                    # Converter _id para id
+                    task_data["id"] = str(task_data.pop("_id"))
+                    tasks.append(Task.parse_obj(task_data))
+                except Exception as e:
+                    logger.error(f"Erro ao converter tarefa {task_data.get('_id')}: {e}")
+            
+            return tasks
         except Exception as e:
-            logger.error(f"Erro ao buscar tarefas: {e}")
+            logger.error(f"Erro ao recuperar tarefas: {str(e)}")
             return []
 
     @staticmethod
@@ -231,44 +259,48 @@ class TaskService:
             return None
 
     @staticmethod
-    async def get_eisenhower_matrix() -> Dict[str, List[Task]]:
-        """Recupera tarefas organizadas pela Matriz Eisenhower."""
+    async def get_eisenhower_matrix(user_id: str = None) -> Dict[str, List[Task]]:
+        """Recupera tarefas organizadas pela Matriz Eisenhower, opcionalmente filtradas por usuário."""
         try:
-            db = await get_db()
+            # Buscar todas as tarefas, filtradas por usuário se fornecido
+            tasks = await TaskService.get_all_tasks(user_id)
             
-            # Busca tarefas que não estão concluídas ou arquivadas
-            active_tasks = await db[TaskService.COLLECTION].find({
-                "status": {"$nin": [TaskStatus.DONE, TaskStatus.ARCHIVED]}
-            }).to_list(length=None)
-            
-            # Organiza por quadrantes
+            # Inicializar a matriz Eisenhower
             matrix = {
-                "quadrant1": [],  # Urgente e Importante
-                "quadrant2": [],  # Não Urgente e Importante
-                "quadrant3": [],  # Urgente e Não Importante
-                "quadrant4": []   # Não Urgente e Não Importante
+                "urgent_important": [],       # Quadrante 1
+                "not_urgent_important": [],   # Quadrante 2
+                "urgent_not_important": [],   # Quadrante 3
+                "not_urgent_not_important": [] # Quadrante 4
             }
             
-            for task in active_tasks:
-                task_obj = Task(**task)
-                
-                if task_obj.priority == TaskPriority.URGENT_IMPORTANT:
-                    matrix["quadrant1"].append(task_obj)
-                elif task_obj.priority == TaskPriority.NOT_URGENT_IMPORTANT:
-                    matrix["quadrant2"].append(task_obj)
-                elif task_obj.priority == TaskPriority.URGENT_NOT_IMPORTANT:
-                    matrix["quadrant3"].append(task_obj)
-                elif task_obj.priority == TaskPriority.NOT_URGENT_NOT_IMPORTANT:
-                    matrix["quadrant4"].append(task_obj)
+            # Distribuir tarefas pelos quadrantes
+            for task in tasks:
+                if task.priority == TaskPriority.URGENT_IMPORTANT:
+                    matrix["urgent_important"].append(task)
+                elif task.priority == TaskPriority.NOT_URGENT_IMPORTANT:
+                    matrix["not_urgent_important"].append(task)
+                elif task.priority == TaskPriority.URGENT_NOT_IMPORTANT:
+                    matrix["urgent_not_important"].append(task)
+                elif task.priority == TaskPriority.NOT_URGENT_NOT_IMPORTANT:
+                    matrix["not_urgent_not_important"].append(task)
+            
+            # Ordenar tarefas por data de vencimento, se disponível
+            for quadrant in matrix:
+                matrix[quadrant].sort(
+                    key=lambda x: (x.due_date is None, x.due_date)
+                )
+            
+            total_tasks = sum(len(tasks) for tasks in matrix.values())
+            logger.info(f"Matriz Eisenhower montada com {total_tasks} tarefas")
             
             return matrix
         except Exception as e:
-            logger.error(f"Erro ao buscar matriz Eisenhower: {e}")
+            logger.error(f"Erro ao montar matriz Eisenhower: {str(e)}")
             return {
-                "quadrant1": [],
-                "quadrant2": [],
-                "quadrant3": [],
-                "quadrant4": []
+                "urgent_important": [],
+                "not_urgent_important": [],
+                "urgent_not_important": [],
+                "not_urgent_not_important": []
             }
 
     @staticmethod
@@ -292,4 +324,21 @@ class TaskService:
             return await TaskService.get_task_by_id(task_id)
         except Exception as e:
             logger.error(f"Erro ao atualizar status da tarefa: {e}")
-            return None 
+            return None
+
+    @staticmethod
+    async def get_eisenhower_matrix_for_user(user_id: str) -> Dict[str, List[Task]]:
+        """
+        Recupera tarefas organizadas pela Matriz Eisenhower para um usuário específico.
+        """
+        if not user_id:
+            logger.error("user_id não fornecido para get_eisenhower_matrix_for_user")
+            return {
+                "urgent_important": [],
+                "not_urgent_important": [],
+                "urgent_not_important": [],
+                "not_urgent_not_important": []
+            }
+            
+        # Simplesmente delega para o método get_eisenhower_matrix com o user_id
+        return await TaskService.get_eisenhower_matrix(user_id) 

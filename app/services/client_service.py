@@ -4,7 +4,7 @@ from app.core.database import Database
 from app.services.rfm import calculate_rfm_score
 from bson import ObjectId
 from bson.errors import InvalidId
-from typing import List
+from typing import List, Optional
 import logging
 import re
 
@@ -12,9 +12,15 @@ logger = logging.getLogger(__name__)
 
 class ClientService:
     @staticmethod
-    async def get_all_clients() -> List[Client]:
+    async def get_all_clients(user_id: str = None) -> List[Client]:
         try:
-            clients = await Database.database["clients"].find().to_list(100)
+            # Criar filtro baseado no user_id, se fornecido
+            query = {}
+            if user_id:
+                query["user_id"] = user_id
+                logger.info(f"Filtrando clientes por user_id: {user_id}")
+            
+            clients = await Database.database["clients"].find(query).to_list(100)
             result = []
             
             for client in clients:
@@ -38,6 +44,7 @@ class ClientService:
                 except Exception as e:
                     logger.error(f"Erro ao converter cliente {client.get('_id')}: {str(e)}")
                     
+            logger.info(f"Recuperados {len(result)} clientes")
             return result
         except Exception as e:
             logger.error(f"Erro ao buscar clientes: {str(e)}")
@@ -87,6 +94,13 @@ class ClientService:
             client_dict["created_at"] = now
             client_dict["updated_at"] = now
             
+            # Verificar se o user_id está presente
+            if "user_id" not in client_dict or not client_dict["user_id"]:
+                logger.warning("Criando cliente sem user_id. Isso pode causar problemas de permissão.")
+            else:
+                # Garantir que user_id seja string
+                client_dict["user_id"] = str(client_dict["user_id"])
+                
             # Validate the client data
             if not re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', client_dict['email']):
                 logger.error("Email inválido: %s", client_dict['email'])
@@ -203,18 +217,24 @@ class ClientService:
             raise
 
     @staticmethod
-    async def get_upcoming_followups() -> List[Client]:
+    async def get_upcoming_followups(user_id: str = None) -> List[Client]:
         """
         Retorna a lista de clientes com follow-ups pendentes,
-        ordenados por data de follow-up.
+        ordenados por data de follow-up. Se user_id for fornecido,
+        retorna apenas os clientes desse usuário.
         """
         try:
             today = datetime.now(timezone.utc)
-            upcoming_followups = await Database.database["clients"].find({
-                "next_followup": {
-                    "$gte": today
-                }
-            }).sort("next_followup", 1).limit(10).to_list(10)
+            
+            # Criar filtro
+            query = {"next_followup": {"$gte": today}}
+            
+            # Adicionar filtro de usuário se fornecido
+            if user_id:
+                query["user_id"] = user_id
+                logger.info(f"Filtrando follow-ups por user_id: {user_id}")
+                
+            upcoming_followups = await Database.database["clients"].find(query).sort("next_followup", 1).limit(10).to_list(10)
 
             result = []
             for client in upcoming_followups:

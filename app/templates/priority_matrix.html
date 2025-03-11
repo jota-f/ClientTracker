@@ -39,7 +39,7 @@
                     <p class="text-sm text-red-600">Urgente + Importante</p>
                 </div>
                 <div class="priority-quadrant p-4 min-h-[250px]" id="URGENT_IMPORTANT" data-priority="URGENT_IMPORTANT">
-                    {% for task in matrix.quadrant1 %}
+                    {% for task in matrix.urgent_important %}
                     <div class="priority-item mb-2 p-3 bg-white rounded shadow-sm border border-gray-200 cursor-move" 
                          data-id="{{ task.id }}" draggable="true">
                         <a href="/tasks/{{ task.id }}" class="font-medium text-gray-800 hover:text-blue-600">
@@ -72,7 +72,7 @@
                     <p class="text-sm text-blue-600">Importante + Não Urgente</p>
                 </div>
                 <div class="priority-quadrant p-4 min-h-[250px]" id="NOT_URGENT_IMPORTANT" data-priority="NOT_URGENT_IMPORTANT">
-                    {% for task in matrix.quadrant2 %}
+                    {% for task in matrix.not_urgent_important %}
                     <div class="priority-item mb-2 p-3 bg-white rounded shadow-sm border border-gray-200 cursor-move" 
                          data-id="{{ task.id }}" draggable="true">
                         <a href="/tasks/{{ task.id }}" class="font-medium text-gray-800 hover:text-blue-600">
@@ -105,7 +105,7 @@
                     <p class="text-sm text-yellow-600">Urgente + Menos Importante</p>
                 </div>
                 <div class="priority-quadrant p-4 min-h-[250px]" id="URGENT_NOT_IMPORTANT" data-priority="URGENT_NOT_IMPORTANT">
-                    {% for task in matrix.quadrant3 %}
+                    {% for task in matrix.urgent_not_important %}
                     <div class="priority-item mb-2 p-3 bg-white rounded shadow-sm border border-gray-200 cursor-move" 
                          data-id="{{ task.id }}" draggable="true">
                         <a href="/tasks/{{ task.id }}" class="font-medium text-gray-800 hover:text-blue-600">
@@ -138,7 +138,7 @@
                     <p class="text-sm text-gray-600">Não Urgente + Não Importante</p>
                 </div>
                 <div class="priority-quadrant p-4 min-h-[250px]" id="NOT_URGENT_NOT_IMPORTANT" data-priority="NOT_URGENT_NOT_IMPORTANT">
-                    {% for task in matrix.quadrant4 %}
+                    {% for task in matrix.not_urgent_not_important %}
                     <div class="priority-item mb-2 p-3 bg-white rounded shadow-sm border border-gray-200 cursor-move" 
                          data-id="{{ task.id }}" draggable="true">
                         <a href="/tasks/{{ task.id }}" class="font-medium text-gray-800 hover:text-blue-600">
