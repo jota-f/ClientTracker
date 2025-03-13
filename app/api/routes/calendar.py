@@ -32,131 +32,167 @@ class EventCreate(BaseModel):
             return v.replace(tzinfo=timezone.utc)
         return v
 
-router = APIRouter(tags=["Integração de Calendário"])
+# Criar router
+router = APIRouter(prefix="/calendar", tags=["calendar"])
 
-@router.get("/google/auth-url")
+# Models para requisições e respostas
+class GoogleAuthResponse(BaseModel):
+    url: str
+
+class CalendarEventCreate(BaseModel):
+    title: str
+    start_time: datetime
+    end_time: datetime
+    description: Optional[str] = None
+    attendees: Optional[List[str]] = None
+    all_day: Optional[bool] = False
+
+class CalendarEvent(BaseModel):
+    id: str
+    title: str
+    description: Optional[str]
+    start: str
+    end: str
+    link: Optional[str]
+    all_day: bool
+
+class CalendarEventListResponse(BaseModel):
+    success: bool
+    events: Optional[List[CalendarEvent]] = None
+    error: Optional[str] = None
+
+class EventCreateResponse(BaseModel):
+    success: bool
+    event_id: Optional[str] = None
+    html_link: Optional[str] = None
+    web_link: Optional[str] = None
+    error: Optional[str] = None
+
+class BasicResponse(BaseModel):
+    success: bool
+    message: Optional[str] = None
+    error: Optional[str] = None
+
+# Rotas
+@router.get("/google/auth", response_model=GoogleAuthResponse)
 async def get_google_auth_url(current_user: User = Depends(get_current_user)):
-    """
-    Obtém a URL de autorização para o Google Calendar.
-    """
+    """Obter URL de autorização para Google Calendar"""
     try:
-        auth_url = await CalendarService.get_google_auth_url(str(current_user.id))
-        return {"auth_url": auth_url}
+        auth_url = await CalendarService.get_google_auth_url(current_user.id)
+        return {"url": auth_url}
     except Exception as e:
-        logger.error(f"Erro ao obter URL de autorização do Google: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erro ao obter URL de autorização"
-        )
+        logger.error(f"Erro ao obter URL de autenticação Google: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao gerar URL de autenticação: {str(e)}")
 
 @router.get("/google/callback")
-async def google_callback(
-    code: str = Query(...),
-    state: str = Query(...),
-    error: Optional[str] = Query(None)
-):
-    """
-    Processamento do callback do Google OAuth2.
-    """
+async def google_callback(code: str, state: str):
+    """Processar callback do Google OAuth"""
     try:
-        if error:
-            return {"success": False, "error": error}
-        
         result = await CalendarService.handle_google_callback(code, state)
-        return result
-    except HTTPException as e:
-        raise e
+        # Redirecionar para uma página de confirmação
+        return {"success": True, "message": "Integração com Google Calendar concluída com sucesso!"}
+    except HTTPException as he:
+        raise he
     except Exception as e:
         logger.error(f"Erro no callback do Google: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erro ao processar callback do Google"
-        )
+        raise HTTPException(status_code=500, detail=f"Erro no callback: {str(e)}")
 
-@router.get("/outlook/auth-url")
+@router.get("/outlook/auth", response_model=GoogleAuthResponse)
 async def get_outlook_auth_url(current_user: User = Depends(get_current_user)):
-    """
-    Obtém a URL de autorização para o Microsoft Outlook Calendar.
-    """
+    """Obter URL de autorização para Outlook Calendar"""
     try:
-        auth_url = await CalendarService.get_outlook_auth_url(str(current_user.id))
-        return {"auth_url": auth_url}
+        auth_url = await CalendarService.get_outlook_auth_url(current_user.id)
+        return {"url": auth_url}
     except Exception as e:
-        logger.error(f"Erro ao obter URL de autorização do Outlook: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erro ao obter URL de autorização"
-        )
+        logger.error(f"Erro ao obter URL de autenticação Outlook: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao gerar URL de autenticação: {str(e)}")
 
 @router.get("/outlook/callback")
-async def outlook_callback(
-    code: str = Query(...),
-    state: str = Query(...),
-    error: Optional[str] = Query(None)
-):
-    """
-    Processamento do callback do Microsoft OAuth2.
-    """
+async def outlook_callback(code: str, state: str):
+    """Processar callback do Outlook OAuth"""
     try:
-        if error:
-            return {"success": False, "error": error}
-        
         result = await CalendarService.handle_outlook_callback(code, state)
-        return result
-    except HTTPException as e:
-        raise e
+        # Redirecionar para uma página de confirmação
+        return {"success": True, "message": "Integração com Outlook Calendar concluída com sucesso!"}
+    except HTTPException as he:
+        raise he
     except Exception as e:
         logger.error(f"Erro no callback do Outlook: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erro ao processar callback do Outlook"
-        )
+        raise HTTPException(status_code=500, detail=f"Erro no callback: {str(e)}")
 
-@router.post("/events", status_code=status.HTTP_201_CREATED)
-async def create_event(
-    event: EventCreate,
+@router.post("/events", response_model=EventCreateResponse)
+async def create_calendar_event(
+    event: CalendarEventCreate,
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Cria um evento no calendário do usuário.
-    """
+    """Criar um evento no calendário integrado do usuário"""
     try:
-        if not current_user.calendar_integration or not current_user.calendar_integration.enabled:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Nenhuma integração de calendário configurada"
-            )
-        
-        result = await CalendarService.create_event(str(current_user.id), event.dict())
-        return {"success": True, "event": result}
-    except HTTPException as e:
-        raise e
+        result = await CalendarService.create_event(
+            user_id=current_user.id,
+            title=event.title,
+            start_time=event.start_time,
+            end_time=event.end_time,
+            description=event.description,
+            attendees=event.attendees,
+            all_day=event.all_day
+        )
+        return result
     except Exception as e:
-        logger.error(f"Erro ao criar evento: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erro ao criar evento no calendário"
-        )
+        logger.error(f"Erro ao criar evento no calendário: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao criar evento: {str(e)}")
 
-@router.delete("/disconnect/{calendar_type}")
-async def disconnect_calendar(
-    calendar_type: CalendarIntegrationType,
+@router.post("/client/{client_id}/followup", response_model=EventCreateResponse)
+async def create_client_followup(
+    client_id: str,
+    followup_date: datetime,
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Desconecta a integração com o calendário.
-    """
+    """Criar um evento de acompanhamento para um cliente"""
     try:
-        result = await CalendarService.disconnect_calendar(str(current_user.id), calendar_type)
+        result = await CalendarService.create_client_followup_event(
+            user_id=current_user.id,
+            client_id=client_id,
+            followup_date=followup_date
+        )
+        return result
+    except Exception as e:
+        logger.error(f"Erro ao criar evento de acompanhamento: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao criar evento de acompanhamento: {str(e)}")
+
+@router.get("/events", response_model=CalendarEventListResponse)
+async def list_calendar_events(
+    max_results: int = Query(10, ge=1, le=50),
+    current_user: User = Depends(get_current_user)
+):
+    """Listar próximos eventos do calendário do usuário"""
+    try:
+        result = await CalendarService.list_upcoming_events(
+            user_id=current_user.id,
+            max_results=max_results
+        )
+        return result
+    except Exception as e:
+        logger.error(f"Erro ao listar eventos do calendário: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao listar eventos: {str(e)}")
+
+@router.delete("/disconnect/{calendar_type}", response_model=BasicResponse)
+async def disconnect_calendar(
+    calendar_type: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Desconectar um calendário integrado"""
+    try:
+        # Converter string para enum
+        cal_type = CalendarIntegrationType.GOOGLE
+        if calendar_type.lower() == "outlook":
+            cal_type = CalendarIntegrationType.OUTLOOK
+        
+        result = await CalendarService.disconnect_calendar(current_user.id, cal_type)
+        
         if result:
-            return {"success": True, "message": f"Desconexão do {calendar_type} realizada com sucesso"}
+            return {"success": True, "message": f"Calendário {calendar_type} desconectado com sucesso"}
         else:
-            return {"success": False, "message": "Falha ao desconectar calendário"}
-    except HTTPException as e:
-        raise e
+            return {"success": False, "error": "Não foi possível desconectar o calendário"}
     except Exception as e:
         logger.error(f"Erro ao desconectar calendário: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erro ao desconectar calendário"
-        ) 
+        raise HTTPException(status_code=500, detail=f"Erro ao desconectar calendário: {str(e)}") 

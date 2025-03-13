@@ -106,12 +106,11 @@ class ClientService:
                 logger.error("Email inválido: %s", client_dict['email'])
                 raise ValueError("Email inválido")
             
-            # Calculate RFM scores - use 0 como valor padrão para engagement
-            engagement = len(client_dict.get("interaction_history", []))
+            # Calculate RFM scores - use lista vazia como padrão para interactions
             client_dict["rfm_scores"] = calculate_rfm_score(
                 client_dict["last_contact"],
                 client_dict["sales_potential"],
-                engagement
+                client_dict.get("interaction_history", [])
             )
             
             result = await Database.database["clients"].insert_one(client_dict)
@@ -138,11 +137,10 @@ class ClientService:
             client_dict["updated_at"] = now
             
             # Calculate RFM scores
-            engagement = len(client_dict.get("interaction_history", []))
             client_dict["rfm_scores"] = calculate_rfm_score(
                 client_dict["last_contact"],
                 client_dict["sales_potential"],
-                engagement
+                client_dict.get("interaction_history", [])
             )
             
             result = await Database.database["clients"].update_one(
@@ -198,11 +196,10 @@ class ClientService:
             if update_result.modified_count > 0:
                 # Recalculate RFM scores
                 updated_client = await ClientService.get_client_by_id(client_id)
-                engagement = len(updated_client.interaction_history)
                 rfm_scores = calculate_rfm_score(
                     updated_client.last_contact,
                     updated_client.sales_potential,
-                    engagement
+                    updated_client.interaction_history
                 )
                 
                 await Database.database["clients"].update_one(
@@ -261,4 +258,9 @@ class ClientService:
             return result
         except Exception as e:
             logger.error(f"Erro ao buscar follow-ups: {str(e)}")
-            return [] 
+            return []
+
+    @staticmethod
+    async def get_clients_by_user(user_id: str) -> List[Client]:
+        """Alias para get_all_clients com user_id específico"""
+        return await ClientService.get_all_clients(user_id) 

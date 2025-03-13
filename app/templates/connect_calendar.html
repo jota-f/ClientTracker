@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Conectar Calendário{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Conectar Calendário</h1>
+            <p class="text-sm text-gray-500">Escolha um serviço de calendário para conectar</p>
+        </div>
+        <div>
+            <a href="{{ url_for('calendar_page') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M7.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l2.293 2.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                </svg>
+                Voltar
+            </a>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="rounded-md bg-red-50 p-4 mb-6">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-red-800">{{ error }}</h3>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if request.query_params.get('msg') %}
+    <div class="rounded-md bg-blue-50 p-4 mb-6">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-blue-800">{{ request.query_params.get('msg') }}</h3>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-8 sm:px-6 text-center">
+                <svg class="mx-auto h-16 w-16 text-red-500" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"/>
+                </svg>
+                <h3 class="mt-4 text-lg font-medium text-gray-900">Google Calendar</h3>
+                <p class="mt-2 text-sm text-gray-500 max-w-md mx-auto">
+                    Conecte sua conta do Google para sincronizar eventos com o Google Calendar.
+                </p>
+                <div class="mt-6">
+                    <a href="{{ url_for('connect_google_calendar') }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                        </svg>
+                        Conectar Google Calendar
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-8 sm:px-6 text-center">
+                <svg class="mx-auto h-16 w-16 text-blue-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M23.923 2.081c.009.009.013.02.023.029v19.78c-.01.01-.014.02-.023.029l-11.93-9.886 11.93-9.952zm-23.91.072A.47.47 0 0 0 0 2.563V21.37c0 .244.146.403.218.437L8.742 11.99.013 2.153zm3.827 10.125L11.324 24H21.5a.48.48 0 0 0 .433-.268l-7.532-6.312-2.857 2.399-10.704-7.54zm18.84-11.06A.456.456 0 0 0 22.5 1H3.813L12 8.505l10.667-7.287z"/>
+                </svg>
+                <h3 class="mt-4 text-lg font-medium text-gray-900">Outlook Calendar</h3>
+                <p class="mt-2 text-sm text-gray-500 max-w-md mx-auto">
+                    Conecte sua conta da Microsoft para sincronizar eventos com o Outlook Calendar.
+                </p>
+                <div class="mt-6">
+                    <a href="{{ url_for('connect_outlook_calendar') }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                        </svg>
+                        Conectar Outlook Calendar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg mt-6">
+        <div class="px-4 py-5 sm:px-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">Informações de Privacidade</h3>
+        </div>
+        <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
+            <p class="text-sm text-gray-600">Ao conectar seu calendário, você concede ao ClientTracker permissão para:</p>
+            <ul class="mt-3 list-disc list-inside text-sm text-gray-600">
+                <li>Ver e criar eventos em seu calendário</li>
+                <li>Enviar convites para participantes de eventos</li>
+            </ul>
+            <p class="mt-3 text-sm font-medium text-gray-900">
+                Nota: O ClientTracker não armazena suas senhas e você pode revogar o acesso a qualquer momento.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Remover alertas após 5 segundos
+    setTimeout(function() {
+        const alerts = document.querySelectorAll('.bg-red-50, .bg-blue-50');
+        alerts.forEach(alert => {
+            alert.classList.add('transition-opacity', 'duration-500', 'opacity-0');
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 500);
+        });
+    }, 5000);
+</script>
+{% endblock %} 

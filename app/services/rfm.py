@@ -1,13 +1,15 @@
 from datetime import datetime, timezone, timedelta
 
-def calculate_rfm_score(last_contact: datetime, sales_potential: int, engagement: int = 0) -> dict:
+def calculate_rfm_score(last_contact: datetime, sales_potential: int, interactions: list = None) -> dict:
     """
     Calcula o score RFM (Recency, Potential, Engagement) para um cliente.
     
     Recência (R):
-    - Menos de 1 mês = 5 pontos
+    - Menos de 15 dias = 5 pontos
+    - 15 dias a 1 mês = 4 pontos
     - 1-3 meses = 3 pontos
-    - Mais de 3 meses = 1 ponto
+    - 3-6 meses = 2 pontos
+    - Mais de 6 meses = 1 ponto
     
     Potencial (P):
     - Alto (5) = 5 pontos
@@ -15,9 +17,16 @@ def calculate_rfm_score(last_contact: datetime, sales_potential: int, engagement
     - Baixo (1) = 1 ponto
     
     Engajamento (E):
-    - Mais de 5 interações = 5 pontos
-    - 3-4 interações = 3 pontos
-    - 1-2 interações = 1 ponto
+    Considera o número de interações e sua recência:
+    - Interações nos últimos 30 dias = peso 1.0
+    - Interações de 1-3 meses = peso 0.8
+    - Interações de 3-6 meses = peso 0.5
+    - Interações mais antigas que 6 meses = não contam
+    
+    Score final de engajamento:
+    - Mais de 5 interações ponderadas = 5 pontos
+    - 3-5 interações ponderadas = 3 pontos
+    - 1-2 interações ponderadas = 1 ponto
     - 0 interações = 0 pontos
     """
     now = datetime.now(timezone.utc)
@@ -30,11 +39,15 @@ def calculate_rfm_score(last_contact: datetime, sales_potential: int, engagement
     months_since_contact = (now - last_contact).days / 30
     
     # Score de recency
-    if months_since_contact < 1:  # Menos de 1 mês
+    if months_since_contact < 0.5:  # Menos de 15 dias
         recency_score = 5
+    elif months_since_contact < 1:   # Menos de 1 mês
+        recency_score = 4
     elif months_since_contact <= 3:  # 1-3 meses
         recency_score = 3
-    else:  # Mais de 3 meses
+    elif months_since_contact <= 6:  # 3-6 meses
+        recency_score = 2
+    else:  # Mais de 6 meses
         recency_score = 1
     
     # Score de potencial
@@ -45,15 +58,41 @@ def calculate_rfm_score(last_contact: datetime, sales_potential: int, engagement
     else:  # Baixo
         potential_score = 1
     
-    # Score de engagement baseado no número de interações
-    # Garantir que engagement é no mínimo 0
-    engagement = max(0, engagement)
+    # Score de engagement baseado no número e recência das interações
+    weighted_interactions = 0
     
-    if engagement > 5:
+    if interactions:
+        for interaction in interactions:
+            interaction_date = interaction.get('date', None)
+            if interaction_date:
+                if isinstance(interaction_date, str):
+                    try:
+                        interaction_date = datetime.fromisoformat(interaction_date.replace('Z', '+00:00'))
+                    except (ValueError, TypeError):
+                        continue
+                
+                # Garantir que interaction_date seja timezone-aware
+                if interaction_date.tzinfo is None:
+                    interaction_date = interaction_date.replace(tzinfo=timezone.utc)
+                
+                months_since_interaction = (now - interaction_date).days / 30
+                
+                # Aplicar peso baseado na idade da interação
+                # Interações mais antigas que 6 meses não contam
+                if months_since_interaction <= 1:  # Último mês
+                    weighted_interactions += 1.0
+                elif months_since_interaction <= 3:  # 1-3 meses
+                    weighted_interactions += 0.8
+                elif months_since_interaction <= 6:  # 3-6 meses
+                    weighted_interactions += 0.5
+                # Interações mais antigas que 6 meses não somam pontos
+    
+    # Calcular score de engagement baseado nas interações ponderadas
+    if weighted_interactions > 5:
         engagement_score = 5
-    elif engagement >= 3:
+    elif weighted_interactions >= 3:
         engagement_score = 3
-    elif engagement >= 1:
+    elif weighted_interactions >= 1:
         engagement_score = 1
     else:
         engagement_score = 0

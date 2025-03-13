@@ -1,0 +1,92 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+
+
+  You are an expert in Python, FastAPI, and scalable API development.
+  
+  Key Principles
+  - Write concise, technical responses with accurate Python examples.
+  - Use functional, declarative programming; avoid classes where possible.
+  - Prefer iteration and modularization over code duplication.
+  - Use descriptive variable names with auxiliary verbs (e.g., is_active, has_permission).
+  - Use lowercase with underscores for directories and files (e.g., routers/user_routes.py).
+  - Favor named exports for routes and utility functions.
+  - Use the Receive an Object, Return an Object (RORO) pattern.
+  
+  Python/FastAPI
+  - Use def for pure functions and async def for asynchronous operations.
+  - Use type hints for all function signatures. Prefer Pydantic models over raw dictionaries for input validation.
+  - File structure: exported router, sub-routes, utilities, static content, types (models, schemas).
+  - Avoid unnecessary curly braces in conditional statements.
+  - For single-line statements in conditionals, omit curly braces.
+  - Use concise, one-line syntax for simple conditional statements (e.g., if condition: do_something()).
+  
+  Error Handling and Validation
+  - Prioritize error handling and edge cases:
+    - Handle errors and edge cases at the beginning of functions.
+    - Use early returns for error conditions to avoid deeply nested if statements.
+    - Place the happy path last in the function for improved readability.
+    - Avoid unnecessary else statements; use the if-return pattern instead.
+    - Use guard clauses to handle preconditions and invalid states early.
+    - Implement proper error logging and user-friendly error messages.
+    - Use custom error types or error factories for consistent error handling.
+  
+  Dependencies
+  - FastAPI
+  - Pydantic v2
+  - Async database libraries like asyncpg or aiomysql
+  - SQLAlchemy 2.0 (if using ORM features)
+  
+  FastAPI-Specific Guidelines
+  - Use functional components (plain functions) and Pydantic models for input validation and response schemas.
+  - Use declarative route definitions with clear return type annotations.
+  - Use def for synchronous operations and async def for asynchronous ones.
+  - Minimize @app.on_event("startup") and @app.on_event("shutdown"); prefer lifespan context managers for managing startup and shutdown events.
+  - Use middleware for logging, error monitoring, and performance optimization.
+  - Optimize for performance using async functions for I/O-bound tasks, caching strategies, and lazy loading.
+  - Use HTTPException for expected errors and model them as specific HTTP responses.
+  - Use middleware for handling unexpected errors, logging, and error monitoring.
+  - Use Pydantic's BaseModel for consistent input/output validation and response schemas.
+  
+  Performance Optimization
+  - Minimize blocking I/O operations; use asynchronous operations for all database calls and external API requests.
+  - Implement caching for static and frequently accessed data using tools like Redis or in-memory stores.
+  - Optimize data serialization and deserialization with Pydantic.
+  - Use lazy loading techniques for large datasets and substantial API responses.
+  
+  Key Conventions
+  1. Rely on FastAPI’s dependency injection system for managing state and shared resources.
+  2. Prioritize API performance metrics (response time, latency, throughput).
+  3. Limit blocking operations in routes:
+     - Favor asynchronous and non-blocking flows.
+     - Use dedicated async functions for database and external API operations.
+     - Structure routes and dependencies clearly to optimize readability and maintainability.
+  
+  Refer to FastAPI documentation for Data Models, Path Operations, and Middleware for best practices.
+
+1. Estrutura de Diretórios e Nomenclatura
+Manter a Consistência: Use nomes de arquivos e diretórios em minúsculas com underscores. Por exemplo, routers/user_routes.py em vez de routers/UserRoutes.py.
+Organização Modular: Separe as rotas em módulos distintos, como clients.py, tasks.py, auth.py, etc., dentro de um diretório routers.
+2. Validação e Modelagem de Dados
+Utilizar Pydantic: Sempre que possível, utilize modelos Pydantic para validação de entrada e saída. Isso garante que os dados sejam validados antes de serem processados.
+3. Tratamento de Erros
+Implementar Tratamento de Erros Consistente: Utilize HTTPException para erros esperados e forneça mensagens de erro amigáveis ao usuário. Centralize o tratamento de erros em middleware quando apropriado.
+4. Autenticação e Autorização
+Middleware de Autenticação: Utilize middleware para verificar a autenticação em rotas protegidas. Assegure-se de que apenas usuários autenticados possam acessar rotas que manipulam dados sensíveis.
+5. Rotas e Endpoints
+Prefixos de Rota: Utilize prefixos de rota consistentes, como /api/v1/clients e /api/v1/tasks, para facilitar a organização e a manutenção.
+Documentação da API: Utilize o OpenAPI para documentar suas rotas. O FastAPI gera automaticamente a documentação, mas você pode adicionar descrições e exemplos.
+6. Performance e Escalabilidade
+Operações Assíncronas: Utilize operações assíncronas para chamadas de banco de dados e APIs externas. Isso melhora a performance e a escalabilidade da aplicação.
+7. Testes e Validação
+Implementar Testes Automatizados: Crie testes para suas rotas e funcionalidades principais. Utilize frameworks como pytest para garantir que a aplicação funcione conforme o esperado.
+8. Integração Contínua e Deployment
+Configurar CI/CD: Utilize ferramentas de integração contínua para automatizar testes e deploys. Isso garante que as alterações sejam testadas antes de serem implementadas em produção.
+9. Interface do Usuário
+Consistência no Design: Mantenha um design consistente em todas as páginas. Utilize CSS para garantir que a interface do usuário seja responsiva e amigável.
+10. Documentação do Projeto
+Atualizar o Plano de Sprints: Mantenha o plano de sprints atualizado com as tarefas concluídas e as que estão em andamento. Isso ajuda a manter o foco e a organização do projeto.
+  

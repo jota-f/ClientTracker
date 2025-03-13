@@ -6,7 +6,8 @@ from fastapi.security import OAuth2PasswordBearer
 from starlette.middleware.base import BaseHTTPMiddleware
 from app.core.config import settings
 from app.core.database import connect_to_mongo, close_mongo_connection
-from app.api.routes import clients, tasks, auth, calendar
+from app.api.routes import clients, tasks, auth, calendar, notification
+from app.routers import calendar_router
 from app.models.client import Client
 from app.models.task import Task, TaskStatus, TaskPriority
 from app.models.user import User
@@ -14,11 +15,14 @@ from app.services.client_service import ClientService
 from app.services.task_service import TaskService
 from app.services.dashboard_service import DashboardService
 from app.services.auth_service import AuthService
+from app.services.scheduler_service import SchedulerService
+from app.services.notification_service import NotificationService
 from app.core.dependencies import get_current_user, get_optional_user
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from fastapi.responses import JSONResponse
 from typing import Dict, Any, Optional
+from fastapi.responses import JSONResponse, RedirectResponse
 
 # Configure logging
 logging.basicConfig(
@@ -31,54 +35,61 @@ logger = logging.getLogger(__name__)
 class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         try:
-            # Lógica para verificar se há token em cookies e convertê-lo para cabeçalho
+            path = request.url.path
+            
+            # Lista de caminhos públicos (incluindo assets estáticos)
+            public_paths = ['/static/', '/api/auth/login', '/api/auth/register', '/login', '/register', 
+                          '/forgot-password', '/auth-debug', '/auth-test', '/favicon.ico']
+            
+            # Se for um caminho público, ignora completamente a verificação
+            if any(path.startswith(public_path) for public_path in public_paths):
+                return await call_next(request)
+            
+            # Para caminhos protegidos, verifica a autenticação
             auth_header = request.headers.get("Authorization")
             auth_cookie = request.cookies.get("Authorization")
             auth_meta = request.headers.get("x-auth-token")
             
-            logger.info(f"Processando requisição para: {request.url.path}")
-            logger.debug(f"Headers originais: {dict(request.headers)}")
-            logger.debug(f"Cookies: {request.cookies}")
+            # Tenta obter o token de diferentes fontes e remove o prefixo 'Bearer ' se existir
+            token = None
+            if auth_header:
+                token = auth_header.replace('Bearer ', '')
+            elif auth_cookie:
+                token = auth_cookie.replace('Bearer ', '')
+            elif auth_meta:
+                token = auth_meta.replace('Bearer ', '')
             
-            # Se não há cabeçalho, mas há um cookie ou meta tag de autorização, use-o como cabeçalho
-            if not auth_header:
-                if auth_cookie:
-                    logger.info("Usando token do cookie como cabeçalho")
-                    auth_header = auth_cookie
-                elif auth_meta:
-                    logger.info("Usando token da meta tag como cabeçalho")
-                    auth_header = f"Bearer {auth_meta}"
-                    
-                if auth_header:
-                    # Criar um header mutable para adicionar o Authorization
-                    request._headers = {**request.headers, "Authorization": auth_header}
-                    # Também atualize o cabeçalho na scope
-                    request.scope["headers"] = [
-                        (key.lower().encode(), value.encode()) 
-                        for key, value in request._headers.items()
-                    ]
-                    logger.debug(f"Headers atualizados: {dict(request._headers)}")
+            # Se não encontrou token em nenhum lugar
+            if not token:
+                if path.startswith('/api/'):
+                    return JSONResponse(status_code=401, content={"detail": "Não autorizado"})
+                else:
+                    return RedirectResponse(url=f"/login?next={request.url.path}", status_code=302)
             
-            # Verifica se é uma requisição para páginas protegidas
-            path = request.url.path
-            if not path.startswith(('/static/', '/api/auth/login', '/api/auth/register', '/login', '/register', '/forgot-password', '/auth-debug', '/auth-test')):
-                logger.info(f"Verificando autenticação para página protegida: {path}")
-                if not auth_header:
-                    logger.warning(f"Acesso negado a {path} - Token não encontrado")
-                    return JSONResponse(
-                        status_code=401,
-                        content={"detail": "Não autorizado"}
-                    )
+            # Adicione no middleware antes da verificação do token
+            logger.debug(f"Token antes da verificação: {token[:10]}...")  # Mostra apenas os primeiros 10 caracteres
             
-            # Continua com a requisição
+            # Se encontrou token, verifica se é válido
+            try:
+                AuthService.decode_token(token)  # Agora passamos o token limpo
+                # Adiciona o token aos headers para as próximas etapas
+                request._headers = {**request.headers, "Authorization": f"Bearer {token}"}
+                request.scope["headers"] = [
+                    (key.lower().encode(), value.encode()) 
+                    for key, value in request._headers.items()
+                ]
+            except Exception as e:
+                logger.error(f"Token inválido: {str(e)}")
+                if path.startswith('/api/'):
+                    return JSONResponse(status_code=401, content={"detail": "Token inválido"})
+                else:
+                    response = RedirectResponse(url="/login?error=invalid_token", status_code=302)
+                    response.set_cookie(key="Authorization", value="", max_age=0)
+                    return response
+            
             response = await call_next(request)
-            
-            # Se a resposta for 401 ou 403, adiciona informações de debug nos headers
-            if response.status_code in (401, 403):
-                logger.warning(f"Resposta {response.status_code} para {path}")
-                logger.debug(f"Headers finais: {dict(request.headers)}")
-            
             return response
+            
         except Exception as e:
             logger.error(f"Erro no middleware de autenticação: {str(e)}")
             return await call_next(request)
@@ -110,10 +121,41 @@ templates = Jinja2Templates(directory="app/templates")
 async def startup_event():
     logger.info("Starting up...")
     await connect_to_mongo()
+    
+    # Iniciar o serviço de agendamento
+    scheduler = SchedulerService()
+    scheduler.start()
+    
+    # Agendar tarefas periódicas
+    try:
+        # Agendar envio de lembretes de tarefas diariamente às 8h
+        scheduler.add_cron_job(
+            func=NotificationService.send_task_reminders,
+            hour=8,
+            minute=0,
+            job_id="task_reminders"
+        )
+        
+        # Agendar envio de lembretes de contato com clientes diariamente às 9h
+        scheduler.add_cron_job(
+            func=NotificationService.schedule_client_reminders,
+            hour=9,
+            minute=0,
+            job_id="client_reminders"
+        )
+        
+        logger.info("Tarefas agendadas com sucesso")
+    except Exception as e:
+        logger.error(f"Erro ao agendar tarefas: {str(e)}")
 
 @app.on_event("shutdown")
 async def shutdown_event():
     logger.info("Shutting down...")
+    
+    # Desligar o serviço de agendamento
+    scheduler = SchedulerService()
+    scheduler.shutdown()
+    
     await close_mongo_connection()
 
 # Health check endpoint
@@ -145,6 +187,15 @@ app.include_router(
     prefix="/api/v1/calendar",
     tags=["calendar"]
 )
+
+app.include_router(
+    notification.router,
+    prefix="/api/v1/notifications",
+    tags=["notifications"]
+)
+
+# Incluir roteadores web
+app.include_router(calendar_router.router)
 
 # Add auth middleware
 app.add_middleware(AuthMiddleware)
@@ -221,7 +272,7 @@ async def client_detail_page(request: Request, client_id: str, current_user: Use
     now = datetime.now(timezone.utc)
     return templates.TemplateResponse(
         "client_detail.html",
-        {"request": request, "client": client, "user": current_user, "now": now}
+        {"request": request, "client": client, "user": current_user, "now": now, "timedelta": timedelta}
     )
 
 @app.get("/clients/{client_id}/edit")
@@ -282,7 +333,7 @@ async def priority_matrix_page(request: Request, current_user: User = Depends(ge
 
 @app.get("/tasks/new")
 async def new_task_page(request: Request, current_user: User = Depends(get_current_user)):
-    clients = await ClientService.get_all_clients()
+    clients = await ClientService.get_all_clients(user_id=str(current_user.id))
     return templates.TemplateResponse(
         "task_form.html",
         {"request": request, "task": None, "clients": clients, "user": current_user}
@@ -304,7 +355,7 @@ async def edit_task_page(request: Request, task_id: str, current_user: User = De
     task = await TaskService.get_task_by_id(task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Tarefa não encontrada")
-    clients = await ClientService.get_all_clients()
+    clients = await ClientService.get_all_clients(user_id=str(current_user.id))
     return templates.TemplateResponse(
         "task_form.html",
         {"request": request, "task": task, "clients": clients, "user": current_user}

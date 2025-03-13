@@ -1,0 +1,25 @@
+.connected-status {
+    background-color: #e6f4ea;
+    color: #1e8e3e;
+    border-radius: 4px;
+    padding: 10px 15px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+}
+
+.success-icon {
+    color: #1e8e3e;
+    font-size: 20px;
+    margin-right: 10px;
+}
+
+.btn-danger {
+    background-color: #ea4335;
+    color: white;
+    border: none;
+}
+
+.btn-danger:hover {
+    background-color: #d33426;
+} 
