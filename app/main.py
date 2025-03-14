@@ -39,10 +39,13 @@ class AuthMiddleware(BaseHTTPMiddleware):
             
             # Lista de caminhos públicos (incluindo assets estáticos)
             public_paths = ['/static/', '/api/auth/login', '/api/auth/register', '/login', '/register', 
-                          '/forgot-password', '/auth-debug', '/auth-test', '/favicon.ico']
+                          '/forgot-password', '/auth-debug', '/auth-test', '/favicon.ico',
+                          '/auth/verify-email/', '/auth/verification-success', '/auth/verification-error',
+                          '/auth/verification-pending', '/google/callback', '/health']
             
             # Se for um caminho público, ignora completamente a verificação
             if any(path.startswith(public_path) for public_path in public_paths):
+                logger.info(f"Caminho público ignorado pelo AuthMiddleware: {path}")
                 return await call_next(request)
             
             # Para caminhos protegidos, verifica a autenticação
@@ -415,3 +418,35 @@ async def auth_test_page(request: Request):
         })
 
 # A função get_optional_user já está definida em app/core/dependencies.py 
+
+# Rotas públicas sem autenticação
+@app.get("/google/callback")
+async def google_callback_public(code: str, state: str, request: Request):
+    """Rota pública para processar o callback do Google OAuth"""
+    from app.services.calendar_service import CalendarService
+    try:
+        logger.info(f"[ROTA PÚBLICA] Callback do Google recebido na rota pública /google/callback")
+        logger.info(f"[ROTA PÚBLICA] Código: {code[:15]}...")
+        logger.info(f"[ROTA PÚBLICA] Estado: {state}")
+        logger.info(f"[ROTA PÚBLICA] Headers: {dict(request.headers)}")
+        
+        # Adicionar path /google/callback à lista de caminhos públicos no middleware AuthMiddleware
+        # para garantir que o callback possa ser processado sem autenticação
+        
+        result = await CalendarService.handle_google_callback(code, state)
+        logger.info(f"[ROTA PÚBLICA] Resultado do callback do Google: {result}")
+        
+        if result and result.get("success"):
+            # Redirecionar para a página de calendário com uma mensagem de sucesso
+            logger.info(f"[ROTA PÚBLICA] Redirecionando para /calendar após sucesso")
+            redirect_url = "/calendar?success=true"
+        else:
+            # Redirecionar com mensagem de erro
+            logger.warning(f"[ROTA PÚBLICA] Redirecionando para /calendar após falha")
+            redirect_url = "/calendar?error=true"
+            
+        return RedirectResponse(url=redirect_url, status_code=302)
+    except Exception as e:
+        logger.error(f"[ROTA PÚBLICA] Erro no callback do Google: {str(e)}")
+        # Em caso de erro, redirecionar para uma página de erro
+        return RedirectResponse(url="/calendar?error=true", status_code=302)

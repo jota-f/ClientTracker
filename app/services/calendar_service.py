@@ -65,51 +65,96 @@ class CalendarService:
         """Processar o callback do Google e obter os tokens"""
         # Verificar o estado para segurança
         try:
-            with open(f"tmp/{state}.json", "r") as f:
-                state_data = json.load(f)
-            
-            user_id = state_data.get("user_id")
-            if not user_id:
-                raise HTTPException(status_code=400, detail="Estado inválido")
-            
-            # Remover o arquivo de estado após o uso
-            os.remove(f"tmp/{state}.json")
-        except FileNotFoundError:
-            raise HTTPException(status_code=400, detail="Estado inválido ou expirado")
-        
-        # Trocar o código por tokens
-        async with httpx.AsyncClient() as client:
-            token_data = {
-                "client_id": GOOGLE_CLIENT_ID,
-                "client_secret": GOOGLE_CLIENT_SECRET,
-                "code": code,
-                "grant_type": "authorization_code",
-                "redirect_uri": GOOGLE_REDIRECT_URI
-            }
-            
-            response = await client.post(GOOGLE_TOKEN_URL, data=token_data)
-            
-            if response.status_code != 200:
-                logger.error(f"Erro ao obter token Google: {response.text}")
-                raise HTTPException(status_code=400, detail="Falha ao obter token do Google")
-            
-            token_info = response.json()
-            
-            # Atualizar o usuário com as informações de integração
-            calendar_integration = CalendarIntegration(
-                type=CalendarIntegrationType.GOOGLE,
-                enabled=True,
-                auth_token=token_info.get("access_token"),
-                refresh_token=token_info.get("refresh_token"),
-                token_expiry=datetime.now() + timedelta(seconds=token_info.get("expires_in", 3600))
-            )
+            logger.info(f"Iniciando handle_google_callback com código {code[:10]}... e estado {state}")
             
             try:
-                await UserService.update_calendar_integration(user_id, calendar_integration)
-                return {"success": True, "user_id": user_id}
-            except Exception as e:
-                logger.error(f"Erro ao atualizar integração do calendário: {str(e)}")
-                raise HTTPException(status_code=500, detail="Erro ao atualizar integração do calendário")
+                with open(f"tmp/{state}.json", "r") as f:
+                    state_data = json.load(f)
+                
+                user_id = state_data.get("user_id")
+                if not user_id:
+                    logger.error(f"Estado {state} carregado, mas não contém user_id")
+                    raise HTTPException(status_code=400, detail="Estado inválido")
+                
+                logger.info(f"Estado válido, user_id encontrado: {user_id}")
+                
+                # Remover o arquivo de estado após o uso
+                os.remove(f"tmp/{state}.json")
+                logger.info(f"Arquivo de estado removido: tmp/{state}.json")
+            except FileNotFoundError:
+                logger.error(f"Arquivo de estado não encontrado: tmp/{state}.json")
+                raise HTTPException(status_code=400, detail="Estado inválido ou expirado")
+            
+            # Trocar o código por tokens
+            logger.info(f"Trocando código por tokens via API do Google")
+            async with httpx.AsyncClient() as client:
+                token_data = {
+                    "client_id": GOOGLE_CLIENT_ID,
+                    "client_secret": GOOGLE_CLIENT_SECRET,
+                    "code": code,
+                    "grant_type": "authorization_code",
+                    "redirect_uri": GOOGLE_REDIRECT_URI
+                }
+                
+                logger.info(f"Enviando requisição para {GOOGLE_TOKEN_URL} com dados: {token_data}")
+                
+                response = await client.post(GOOGLE_TOKEN_URL, data=token_data)
+                
+                if response.status_code != 200:
+                    logger.error(f"Erro ao obter token Google: {response.text}")
+                    raise HTTPException(status_code=400, detail="Falha ao obter token do Google")
+                
+                token_info = response.json()
+                logger.info(f"Tokens obtidos com sucesso. Access token: {token_info.get('access_token')[:10]}...")
+                
+                # Atualizar o usuário com as informações de integração
+                calendar_integration = CalendarIntegration(
+                    type=CalendarIntegrationType.GOOGLE,
+                    enabled=True,
+                    auth_token=token_info.get("access_token"),
+                    refresh_token=token_info.get("refresh_token"),
+                    expires_at=datetime.now(timezone.utc) + timedelta(seconds=token_info.get("expires_in", 3600))
+                )
+                
+                logger.info(f"CalendarIntegration criado: {calendar_integration.dict()}")
+                
+                try:
+                    # Verifica se o usuário existe antes de atualizar
+                    user = await UserService.get_user_by_id(user_id)
+                    if not user:
+                        logger.error(f"Usuário não encontrado com ID {user_id}")
+                        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+                        
+                    logger.info(f"Usuário encontrado: {user.email}, atualizando integração de calendário")
+                    
+                    # Atualizar a integração
+                    result = await UserService.update_calendar_integration(user_id, calendar_integration)
+                    
+                    # Verificar o resultado
+                    if result:
+                        logger.info(f"Integração atualizada com sucesso para usuário {user_id}")
+                        
+                        # Verificar se a atualização foi efetivamente aplicada no banco
+                        updated_user = await UserService.get_user_by_id(user_id)
+                        if updated_user and updated_user.calendar_integration.enabled:
+                            logger.info(f"Verificação de atualização: integração está ativa para {user_id}")
+                        else:
+                            logger.warning(f"Verificação de atualização: integração NÃO está ativa para {user_id}")
+                            
+                        return {"success": True, "user_id": user_id}
+                    else:
+                        logger.error(f"Falha ao atualizar integração para usuário {user_id}")
+                        raise HTTPException(status_code=500, detail="Falha ao atualizar integração do calendário")
+                    
+                except Exception as e:
+                    logger.error(f"Erro ao atualizar integração do calendário: {str(e)}")
+                    raise HTTPException(status_code=500, detail="Erro ao atualizar integração do calendário")
+        except HTTPException as he:
+            logger.error(f"HTTPException durante callback Google: {he.detail}")
+            raise
+        except Exception as e:
+            logger.error(f"Erro geral durante callback Google: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Erro durante o callback: {str(e)}")
     
     @staticmethod
     async def get_outlook_auth_url(user_id: str) -> str:
