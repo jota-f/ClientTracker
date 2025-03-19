@@ -6,7 +6,7 @@ from fastapi.security import OAuth2PasswordBearer
 from starlette.middleware.base import BaseHTTPMiddleware
 from app.core.config import settings
 from app.core.database import connect_to_mongo, close_mongo_connection
-from app.api.routes import clients, tasks, auth, calendar, notification
+from app.api.routes import clients, tasks, auth, calendar, notification, users
 from app.routers import calendar_router
 from app.models.client import Client
 from app.models.task import Task, TaskStatus, TaskPriority
@@ -23,6 +23,11 @@ from datetime import datetime, timezone, timedelta
 from fastapi.responses import JSONResponse
 from typing import Dict, Any, Optional
 from fastapi.responses import JSONResponse, RedirectResponse
+from app.middleware.email_verification import EmailVerificationMiddleware
+from app.jobs.contact_schedule_job import start_contact_schedule_job
+from app.jobs.notification_job import start_notification_job
+import asyncio
+from app.services.user_service import UserService
 
 # Configure logging
 logging.basicConfig(
@@ -41,7 +46,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
             public_paths = ['/static/', '/api/auth/login', '/api/auth/register', '/login', '/register', 
                           '/forgot-password', '/auth-debug', '/auth-test', '/favicon.ico',
                           '/auth/verify-email/', '/auth/verification-success', '/auth/verification-error',
-                          '/auth/verification-pending', '/google/callback', '/health']
+                          '/auth/verification-pending', '/calendar/google/callback', '/health',
+                          '/api/auth/resend-verification', '/api/auth/verify-email', '/api/auth/forgot-password',
+                          '/reset-password']
             
             # Se for um caminho público, ignora completamente a verificação
             if any(path.startswith(public_path) for public_path in public_paths):
@@ -123,33 +130,29 @@ templates = Jinja2Templates(directory="app/templates")
 @app.on_event("startup")
 async def startup_event():
     logger.info("Starting up...")
-    await connect_to_mongo()
     
-    # Iniciar o serviço de agendamento
-    scheduler = SchedulerService()
-    scheduler.start()
-    
-    # Agendar tarefas periódicas
     try:
-        # Agendar envio de lembretes de tarefas diariamente às 8h
-        scheduler.add_cron_job(
-            func=NotificationService.send_task_reminders,
-            hour=8,
-            minute=0,
-            job_id="task_reminders"
-        )
+        # Inicializar conexão com o banco de dados
+        await connect_to_mongo()
         
-        # Agendar envio de lembretes de contato com clientes diariamente às 9h
-        scheduler.add_cron_job(
-            func=NotificationService.schedule_client_reminders,
-            hour=9,
-            minute=0,
-            job_id="client_reminders"
-        )
+        # Inicializar configurações de notificação para usuários existentes
+        await UserService.initialize_notification_settings()
         
-        logger.info("Tarefas agendadas com sucesso")
+        # Garantir que todas as datas dos clientes tenham timezone
+        updated_clients = await ClientService.ensure_client_dates_have_timezone()
+        logger.info(f"Timezone atualizado para {updated_clients} clientes")
+        
+        # Iniciar scheduler
+        scheduler = SchedulerService()
+        await scheduler.start()
+        
+        # Iniciar job de notificações
+        asyncio.create_task(start_notification_job())
+        
+        logger.info("Aplicação iniciada com sucesso")
     except Exception as e:
-        logger.error(f"Erro ao agendar tarefas: {str(e)}")
+        logger.error(f"Erro durante a inicialização da aplicação: {str(e)}")
+        raise e
 
 @app.on_event("shutdown")
 async def shutdown_event():
@@ -185,6 +188,19 @@ app.include_router(
     tags=["auth"]
 )
 
+# Debug log para verificar se o router de users está sendo registrado
+try:
+    logger.info(f"Registrando router de users. Router válido: {users.router is not None}")
+    logger.info(f"Rotas no router de users: {[route.path for route in users.router.routes]}")
+except Exception as e:
+    logger.error(f"Erro ao registrar router de users: {str(e)}")
+
+app.include_router(
+    users.router,
+    prefix="/api/users",
+    tags=["users"]
+)
+
 app.include_router(
     calendar.router,
     prefix="/api/v1/calendar",
@@ -202,6 +218,9 @@ app.include_router(calendar_router.router)
 
 # Add auth middleware
 app.add_middleware(AuthMiddleware)
+
+# Add email verification middleware
+app.add_middleware(EmailVerificationMiddleware)
 
 # Root route
 @app.get("/")
@@ -344,9 +363,15 @@ async def new_task_page(request: Request, current_user: User = Depends(get_curre
 
 @app.get("/tasks/{task_id}")
 async def task_detail_page(request: Request, task_id: str, current_user: User = Depends(get_current_user)):
-    task = await TaskService.get_task_by_id(task_id)
+    # Filtrar pela tarefa com verificação de usuário
+    task = await TaskService.get_task_by_id(task_id, user_id=str(current_user.id))
     if not task:
+        # Se não encontrou com o user_id atual, verifica se existe para outro usuário
+        any_task = await TaskService.get_task_by_id(task_id)
+        if any_task:
+            raise HTTPException(status_code=403, detail="Você não tem permissão para acessar esta tarefa")
         raise HTTPException(status_code=404, detail="Tarefa não encontrada")
+    
     now = datetime.now(timezone.utc)
     return templates.TemplateResponse(
         "task_detail.html",
@@ -355,9 +380,15 @@ async def task_detail_page(request: Request, task_id: str, current_user: User = 
 
 @app.get("/tasks/{task_id}/edit")
 async def edit_task_page(request: Request, task_id: str, current_user: User = Depends(get_current_user)):
-    task = await TaskService.get_task_by_id(task_id)
+    # Filtrar pela tarefa com verificação de usuário
+    task = await TaskService.get_task_by_id(task_id, user_id=str(current_user.id))
     if not task:
+        # Se não encontrou com o user_id atual, verifica se existe para outro usuário
+        any_task = await TaskService.get_task_by_id(task_id)
+        if any_task:
+            raise HTTPException(status_code=403, detail="Você não tem permissão para editar esta tarefa")
         raise HTTPException(status_code=404, detail="Tarefa não encontrada")
+    
     clients = await ClientService.get_all_clients(user_id=str(current_user.id))
     return templates.TemplateResponse(
         "task_form.html",
@@ -420,18 +451,15 @@ async def auth_test_page(request: Request):
 # A função get_optional_user já está definida em app/core/dependencies.py 
 
 # Rotas públicas sem autenticação
-@app.get("/google/callback")
+@app.get("/calendar/google/callback")
 async def google_callback_public(code: str, state: str, request: Request):
     """Rota pública para processar o callback do Google OAuth"""
     from app.services.calendar_service import CalendarService
     try:
-        logger.info(f"[ROTA PÚBLICA] Callback do Google recebido na rota pública /google/callback")
+        logger.info(f"[ROTA PÚBLICA] Callback do Google recebido na rota pública /calendar/google/callback")
         logger.info(f"[ROTA PÚBLICA] Código: {code[:15]}...")
         logger.info(f"[ROTA PÚBLICA] Estado: {state}")
         logger.info(f"[ROTA PÚBLICA] Headers: {dict(request.headers)}")
-        
-        # Adicionar path /google/callback à lista de caminhos públicos no middleware AuthMiddleware
-        # para garantir que o callback possa ser processado sem autenticação
         
         result = await CalendarService.handle_google_callback(code, state)
         logger.info(f"[ROTA PÚBLICA] Resultado do callback do Google: {result}")
@@ -450,3 +478,38 @@ async def google_callback_public(code: str, state: str, request: Request):
         logger.error(f"[ROTA PÚBLICA] Erro no callback do Google: {str(e)}")
         # Em caso de erro, redirecionar para uma página de erro
         return RedirectResponse(url="/calendar?error=true", status_code=302)
+
+# Rotas de verificação de email
+@app.get("/auth/verify-email/{token}")
+async def verify_email_page(token: str, request: Request):
+    """Processa o token de verificação de email"""
+    from app.services.email_verification_service import EmailVerificationService
+    try:
+        logger.info(f"Processando token de verificação de email: {token[:10]}...")
+        email_verification_service = EmailVerificationService()
+        success = await email_verification_service.verify_email(token)
+        
+        if success:
+            logger.info(f"Email verificado com sucesso para token: {token[:10]}...")
+            return RedirectResponse(url="/auth/verification-success", status_code=302)
+        else:
+            logger.error(f"Falha ao verificar email para token: {token[:10]}...")
+            return RedirectResponse(url="/auth/verification-error", status_code=302)
+    except Exception as e:
+        logger.error(f"Erro ao verificar e-mail: {str(e)}")
+        return RedirectResponse(url="/auth/verification-error?message=error", status_code=302)
+
+@app.get("/auth/verification-success")
+async def verification_success_page(request: Request):
+    """Página de sucesso após verificação de email"""
+    return templates.TemplateResponse("auth/verification_success.html", {"request": request})
+
+@app.get("/auth/verification-error")
+async def verification_error_page(request: Request, message: str = None):
+    """Página de erro após falha na verificação de email"""
+    return templates.TemplateResponse("auth/verification_error.html", {"request": request, "message": message})
+
+@app.get("/auth/verification-pending")
+async def verification_pending_page(request: Request):
+    """Página mostrada para usuários que ainda não verificaram o email"""
+    return templates.TemplateResponse("auth/verification_pending.html", {"request": request})

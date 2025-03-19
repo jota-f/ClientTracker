@@ -32,15 +32,17 @@
 - ✅ Sistema de gerenciamento de tarefas estilo Trello
 - ✅ Funcionalidades de organização e reordenação
 
-## Sprint 4: Lembretes, Automação e Integrações (1 semana) 🔄
+## Sprint 4: Lembretes, Automação e Integrações (1 semana) ✅
 ### Tarefas
 - ✅ Integrar Google Calendar para agendamento
 - ❌ Integrar Outlook para agendamento
 - ✅ Configurar sistema de notificações (email)
-- ❌ Implementar periodicidade de contato baseada no RFM
+- ✅ Implementar periodicidade de contato baseada no RFM
+- ✅ Implementar configurações de notificação personalizáveis por usuário
 
 ### Entregáveis
-- 🔄 Sistema de agendamento e notificações parcialmente implementado
+- ✅ Sistema de agendamento e notificações implementado
+- ✅ Configurações de notificação personalizáveis
 
 ## Sprint 5: Relatórios e UI/UX (1 semana)
 ### Tarefas

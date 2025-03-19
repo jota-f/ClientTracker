@@ -2,10 +2,16 @@ import logging
 from typing import Dict, Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Body, Request
 from fastapi.security import OAuth2PasswordRequestForm
+from datetime import datetime, timezone, timedelta
+import secrets
+from bson import ObjectId
 
-from app.models.user import User, UserCreate, UserResponse, UserUpdate, PasswordUpdate
+from app.models.user import User, UserCreate, UserResponse, UserUpdate, PasswordUpdate, UserLogin, NotificationPreference, NotificationSettings
 from app.services.auth_service import AuthService
 from app.core.dependencies import get_current_user, get_optional_user
+from app.services.email_verification_service import EmailVerificationService
+from app.core.database import Database
+from pydantic import BaseModel
 
 router = APIRouter(tags=["Autenticação"])
 logger = logging.getLogger(__name__)
@@ -47,6 +53,13 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()) -> Dict[str, A
             detail="Email ou senha incorretos",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    
+    # Verifica se o email está verificado
+    if not user.email_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Seu email não foi verificado. Por favor, verifique seu email antes de fazer login.",
+        )
         
     # Gera o token JWT
     token_data = {
@@ -55,6 +68,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()) -> Dict[str, A
         "username": user.username,
         "role": user.role
     }
+    logger.info(f"Gerando token com user.id: '{user.id}'")
     access_token = AuthService.create_access_token(token_data)
     
     return {
@@ -64,7 +78,8 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()) -> Dict[str, A
             "id": str(user.id),
             "username": user.username,
             "email": user.email,
-            "role": user.role
+            "role": user.role,
+            "email_verified": user.email_verified
         }
     }
 
@@ -73,6 +88,11 @@ async def get_user_me(current_user: User = Depends(get_current_user)) -> UserRes
     """
     Retorna os dados do usuário autenticado.
     """
+    # Log para debug
+    logger.info(f"Retornando dados do usuário: {current_user.username}")
+    logger.info(f"notification_settings do usuário no banco: {current_user.notification_settings.model_dump()}")
+    
+    # Criar response com notification_settings explicitamente
     return UserResponse(
         id=current_user.id,
         username=current_user.username,
@@ -85,7 +105,8 @@ async def get_user_me(current_user: User = Depends(get_current_user)) -> UserRes
         is_active=current_user.is_active,
         created_at=current_user.created_at,
         updated_at=current_user.updated_at,
-        last_login=current_user.last_login
+        last_login=current_user.last_login,
+        notification_settings=current_user.notification_settings
     )
 
 @router.put("/me", response_model=UserResponse)
@@ -196,4 +217,64 @@ async def check_auth(current_user: Optional[User] = Depends(get_optional_user)) 
     return {
         "authenticated": False,
         "message": "Usuário não autenticado"
-    } 
+    }
+
+@router.post("/resend-verification", status_code=status.HTTP_200_OK)
+async def resend_verification_email(email: str = Body(..., embed=True)) -> Dict[str, str]:
+    """
+    Reenvia o email de verificação para o usuário.
+    """
+    try:
+        # Buscar o usuário pelo email
+        user_dict = await Database.database["users"].find_one({"email": email})
+        if not user_dict:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Usuário não encontrado"
+            )
+            
+        # Converte o ObjectId para string antes de passar para o parse_obj
+        user_dict["_id"] = str(user_dict["_id"])
+        user = User.parse_obj(user_dict)
+        
+        # Verificar se o email já foi verificado
+        if user.email_verified:
+            return {"message": "Seu email já está verificado"}
+        
+        # Gerar um novo token de verificação
+        verification_token = secrets.token_urlsafe(32)
+        verification_expires = datetime.now(timezone.utc) + timedelta(hours=24)
+        
+        # Atualizar o token no banco de dados
+        await Database.database["users"].update_one(
+            {"_id": ObjectId(user.id)},
+            {
+                "$set": {
+                    "verification_token": verification_token,
+                    "verification_token_expires": verification_expires,
+                    "updated_at": datetime.now(timezone.utc)
+                }
+            }
+        )
+        
+        # Enviar o email de verificação
+        email_service = EmailVerificationService()
+        success = await email_service.send_verification_email(user.email, verification_token)
+        
+        if success:
+            logger.info(f"Email de verificação reenviado com sucesso para {user.email}")
+            return {"message": "Email de verificação reenviado com sucesso"}
+        else:
+            logger.error(f"Falha ao reenviar email de verificação para {user.email}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Falha ao enviar email de verificação"
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao reenviar email de verificação: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erro ao reenviar email de verificação"
+        ) 
