@@ -34,12 +34,13 @@
 
 ## Sprint 4: Lembretes, Automação e Integrações (1 semana) 🔄
 ### Tarefas
-- Integrar Google Calendar e outlook para agendamento
-- Configurar sistema de notificações (email)
-- Implementar periodicidade de contato baseada no RFM
+- ✅ Integrar Google Calendar para agendamento
+- ❌ Integrar Outlook para agendamento
+- ✅ Configurar sistema de notificações (email)
+- ❌ Implementar periodicidade de contato baseada no RFM
 
 ### Entregáveis
-- Sistema de agendamento e notificações funcional
+- 🔄 Sistema de agendamento e notificações parcialmente implementado
 
 ## Sprint 5: Relatórios e UI/UX (1 semana)
 ### Tarefas
