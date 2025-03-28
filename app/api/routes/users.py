@@ -143,6 +143,7 @@ async def update_notification_settings(
         
         logger.info(f"Valores retornados depois de sanitizar: {sanitized_settings}")
         
+        # Retornar apenas os dados necessários, sem informações sensíveis do usuário
         return {
             "message": "Configurações de notificação atualizadas com sucesso",
             "notification_settings": sanitized_settings,
