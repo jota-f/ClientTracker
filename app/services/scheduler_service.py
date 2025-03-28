@@ -29,14 +29,15 @@ class SchedulerService:
         else:
             self._scheduler = SchedulerService._scheduler
     
-    def start(self):
-        """Inicia o scheduler"""
+    async def start(self):
+        """Inicia o scheduler de forma assíncrona"""
         if not self._scheduler.running:
             try:
                 self._scheduler.start()
                 logger.info("Scheduler iniciado com sucesso")
             except Exception as e:
                 logger.error(f"Erro ao iniciar o scheduler: {e}")
+                raise e
     
     def shutdown(self):
         """Para o scheduler"""

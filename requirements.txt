@@ -1,12 +1,13 @@
-fastapi==0.95.2
-uvicorn==0.21.1
+fastapi>=0.100.0
+uvicorn==0.22.0
 jinja2==3.1.2
 pymongo==4.5.0
 motor==3.1.1
-pydantic==1.10.7
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
 python-multipart==0.0.6
 python-dotenv==1.0.0
-email-validator==2.0.0
+email-validator>=2.0.0
 bcrypt==4.0.1
 passlib==1.7.4
 python-jose==3.3.0
@@ -14,4 +15,6 @@ itsdangerous==2.1.2
 pytest==7.4.2
 httpx==0.25.0
 aiofiles==23.2.1
-python-dateutil==2.8.2 
+python-dateutil==2.8.2
+fastapi-mail>=1.0.0
+apscheduler>=3.10.0

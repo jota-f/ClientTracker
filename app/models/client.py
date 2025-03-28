@@ -29,7 +29,7 @@ class RFMScores(BaseModel):
     total: int = Field(ge=2, le=15)
 
     class Config:
-        allow_population_by_field_name = True
+        populate_by_name = True
 
 class Interaction(BaseModel):
     date: datetime
@@ -44,7 +44,7 @@ class Interaction(BaseModel):
         return v
 
     class Config:
-        allow_population_by_field_name = True
+        populate_by_name = True
 
 class Task(BaseModel):
     title: str
@@ -59,13 +59,13 @@ class Task(BaseModel):
         return v
 
     class Config:
-        allow_population_by_field_name = True
+        populate_by_name = True
 
 class Client(BaseModel):
     id: Optional[PyObjectId] = Field(alias='_id')
     name: str
     company: str
-    email: str
+    email: EmailStr
     phone: str
     status: ClientStatus
     sales_potential: int = Field(ge=1, le=5)
@@ -85,7 +85,7 @@ class Client(BaseModel):
         return v
 
     class Config:
-        allow_population_by_field_name = True
+        populate_by_name = True
         json_encoders = {
             datetime: lambda v: v.isoformat(),
             ObjectId: str

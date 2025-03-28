@@ -40,7 +40,10 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
             logger.error("Token não contém ID do usuário")
             raise credentials_exception
             
-        logger.info(f"Token decodificado com sucesso para usuário ID: {user_id}")
+        logger.info(f"Token decodificado com sucesso para usuário ID: '{user_id}'")
+        if user_id.lower() == 'none':
+            logger.error("ID do usuário no token é 'None'")
+            raise credentials_exception
     except (JWTError, ValueError) as e:
         logger.error(f"Erro ao decodificar token: {str(e)}")
         raise credentials_exception

@@ -9,6 +9,7 @@ from bson import ObjectId
 
 from app.models.user import User, UserCreate, UserResponse
 from app.core.database import Database
+from app.models.notification_settings import NotificationSettings, NotificationPreference
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +59,10 @@ class AuthService:
                 logger.error("Token vazio recebido")
                 raise ValueError("Token vazio")
                 
-            logger.info(f"Tentando decodificar token: {token[:20]}...")
+            # Log token de forma segura (primeiros 20 caracteres)
+            token_prefix = token[:20] + "..." if len(token) > 20 else "[token_protegido]"
+            logger.info(f"Tentando decodificar token: {token_prefix}")
+            
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
             logger.info(f"Token decodificado com sucesso. Payload: {payload}")
             return payload
@@ -86,8 +90,19 @@ class AuthService:
                 logger.warning(f"Usuário não encontrado: {email}")
                 return None
                 
+            # Verificar o formato de _id
+            if "_id" in user_dict:
+                if isinstance(user_dict["_id"], ObjectId):
+                    user_dict["_id"] = str(user_dict["_id"])
+                    logger.info(f"ObjectId convertido para string: {user_dict['_id']}")
+                else:
+                    logger.warning(f"_id não é um ObjectId: {type(user_dict['_id'])}, valor: {user_dict['_id']}")
+            else:
+                logger.warning("Campo _id não encontrado no documento do usuário")
+                
+            # Converte o ObjectId para string antes de passar para o parse_obj
             user = User.parse_obj(user_dict)
-            logger.info(f"Usuário encontrado: {user.email}")
+            logger.info(f"Usuário encontrado: {user.email}, ID: {user.id}")
             
             if not AuthService.verify_password(password, user.hashed_password):
                 logger.warning(f"Senha incorreta para usuário: {email}")
@@ -104,7 +119,7 @@ class AuthService:
             return user
         except Exception as e:
             logger.error(f"Erro ao autenticar usuário: {str(e)}")
-            return None
+            raise  # Propaga o erro para poder ser tratado adequadamente
 
     @staticmethod
     async def create_user(user_create: UserCreate) -> Optional[UserResponse]:
@@ -124,6 +139,11 @@ class AuthService:
                 else:
                     raise ValueError("Nome de usuário já existe")
             
+            # Gerar token de verificação
+            verification_token = secrets.token_urlsafe(32)
+            verification_expires = datetime.now(timezone.utc) + timedelta(hours=24)
+            logger.info(f"Token de verificação gerado para {user_create.email}: {verification_token[:10]}...")
+            
             now = datetime.now(timezone.utc)
             
             # Prepara o documento do usuário
@@ -139,11 +159,14 @@ class AuthService:
                     "enabled": False
                 },
                 "email_verified": False,
+                "verification_token": verification_token,
+                "verification_token_expires": verification_expires,
                 "is_active": True,
                 "created_at": now,
                 "updated_at": now
             }
             
+            logger.info(f"Inserindo novo usuário no banco: {user_create.email}")
             result = await Database.database["users"].insert_one(user_dict)
             
             # Retorna o usuário criado (sem a senha)
@@ -163,19 +186,59 @@ class AuthService:
                 last_login=created_user.get("last_login")
             )
             
+            # Enviar email de verificação
+            from app.services.email_verification_service import EmailVerificationService
+            email_service = EmailVerificationService()
+            
+            # Enviar o email de verificação
+            sent = await email_service.send_verification_email(user_create.email, verification_token)
+            
+            if sent:
+                logger.info(f"Email de verificação enviado com sucesso para {user_create.email}")
+            else:
+                logger.error(f"Falha ao enviar email de verificação para {user_create.email}")
+            
             return user_response
         except Exception as e:
             logger.error(f"Erro ao criar usuário: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
             raise
 
     @staticmethod
     async def get_user_by_id(user_id: str) -> Optional[User]:
         """Obtém um usuário pelo ID."""
         try:
-            user_dict = await Database.database["users"].find_one({"_id": ObjectId(user_id)})
-            if not user_dict:
+            logger.info(f"Buscando usuário com ID (formato original): '{user_id}'")
+            
+            # Verificar se é um ObjectId válido
+            if user_id and user_id.lower() != 'none':
+                object_id = ObjectId(user_id)
+                logger.info(f"ObjectId válido criado: {object_id}")
+                
+                user_dict = await Database.database["users"].find_one({"_id": object_id})
+                if not user_dict:
+                    logger.warning(f"Usuário não encontrado para ID: {user_id}")
+                    return None
+                    
+                # Log do usuário encontrado
+                logger.info(f"Usuário encontrado: {user_dict.get('email')}, ID: {user_dict.get('_id')}")
+                
+                # Verificar o formato de _id
+                if "_id" in user_dict:
+                    if isinstance(user_dict["_id"], ObjectId):
+                        user_dict["_id"] = str(user_dict["_id"])
+                        logger.info(f"ObjectId convertido para string: {user_dict['_id']}")
+                    else:
+                        logger.warning(f"_id não é um ObjectId: {type(user_dict['_id'])}, valor: {user_dict['_id']}")
+                else:
+                    logger.warning("Campo _id não encontrado no documento do usuário")
+                
+                # Converte o ObjectId para string antes de passar para o parse_obj
+                return User.parse_obj(user_dict)
+            else:
+                logger.error(f"ID de usuário inválido: '{user_id}'")
                 return None
-            return User.parse_obj(user_dict)
         except Exception as e:
             logger.error(f"Erro ao buscar usuário por ID: {str(e)}")
             return None

@@ -1,19 +1,51 @@
-from pydantic import BaseModel, EmailStr, Field, validator
-from typing import List, Optional, Dict
+from pydantic import BaseModel, EmailStr, Field, validator, ConfigDict
+from typing import List, Optional, Dict, Any, Annotated
 from datetime import datetime, timezone
 from enum import Enum
 from bson import ObjectId
+from pydantic_core import core_schema
+from pydantic.json_schema import JsonSchemaValue
+from app.models.notification_settings import NotificationSettings, NotificationPreference
 
 class PyObjectId(str):
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
+    def __get_pydantic_core_schema__(
+        cls,
+        _source_type: Any,
+        _handler: Any,
+    ) -> core_schema.CoreSchema:
+        return core_schema.json_or_python_schema(
+            json_schema=core_schema.str_schema(),
+            python_schema=core_schema.chain_schema([
+                core_schema.union_schema([
+                    core_schema.is_instance_schema(ObjectId),
+                    core_schema.str_schema(),
+                ]),
+                core_schema.no_info_plain_validator_function(cls.validate),
+            ]),
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                lambda x: str(x) if isinstance(x, ObjectId) else x
+            ),
+        )
 
     @classmethod
-    def validate(cls, v):
-        if isinstance(v, ObjectId):
-            return str(v)
-        return v
+    def validate(cls, value: Any) -> str:
+        if isinstance(value, ObjectId):
+            return str(value)
+        if isinstance(value, str) and ObjectId.is_valid(value):
+            return value
+        raise ValueError("Invalid ObjectId")
+
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls,
+        _core_schema: core_schema.CoreSchema,
+        _handler: Any
+    ) -> JsonSchemaValue:
+        return {
+            "type": "string",
+            "examples": ["507f1f77bcf86cd799439011"]
+        }
 
 class UserRole(str, Enum):
     ADMIN = "admin"
@@ -24,19 +56,12 @@ class CalendarIntegrationType(str, Enum):
     OUTLOOK = "outlook"
     NONE = "none"
 
-class NotificationPreference(str, Enum):
-    EMAIL = "email"
-    IN_APP = "in_app"
-    BOTH = "both"
-    NONE = "none"
-
 class CalendarIntegration(BaseModel):
-    type: CalendarIntegrationType
+    type: CalendarIntegrationType = CalendarIntegrationType.NONE
     enabled: bool = False
-    auth_token: Optional[str] = None
+    access_token: Optional[str] = None
     refresh_token: Optional[str] = None
     expires_at: Optional[datetime] = None
-    calendar_id: Optional[str] = None
 
     @validator('expires_at')
     def ensure_timezone(cls, v):
@@ -44,10 +69,11 @@ class CalendarIntegration(BaseModel):
             return v.replace(tzinfo=timezone.utc)
         return v
 
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )
 
 class User(BaseModel):
     id: Optional[PyObjectId] = Field(alias='_id')
@@ -65,6 +91,7 @@ class User(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     last_login: Optional[datetime] = None
+    notification_settings: NotificationSettings = Field(default_factory=NotificationSettings)
 
     @validator('created_at', 'updated_at', 'last_login')
     def ensure_timezone(cls, v):
@@ -72,13 +99,14 @@ class User(BaseModel):
             return v.replace(tzinfo=timezone.utc)
         return v
 
-    class Config:
-        allow_population_by_field_name = True
-        json_encoders = {
+    model_config = ConfigDict(
+        populate_by_name=True,
+        json_encoders={
             datetime: lambda v: v.isoformat(),
             ObjectId: str
-        }
-        use_enum_values = True
+        },
+        use_enum_values=True
+    )
 
 class UserCreate(BaseModel):
     username: str
@@ -103,17 +131,20 @@ class UserResponse(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     last_login: Optional[datetime] = None
+    notification_settings: NotificationSettings = Field(default_factory=NotificationSettings)
 
-    class Config:
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )
 
 class UserUpdate(BaseModel):
     username: Optional[str] = None
     email: Optional[EmailStr] = None
     full_name: Optional[str] = None
     notification_preference: Optional[NotificationPreference] = None
+    notification_settings: Optional[NotificationSettings] = None
     
 class PasswordUpdate(BaseModel):
     current_password: str

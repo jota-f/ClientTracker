@@ -53,7 +53,7 @@ async def google_callback(
             raise HTTPException(status_code=404, detail="Usuário não encontrado")
         
         # Gerar novo token JWT
-        access_token = AuthService.create_access_token(data={"sub": user.email})
+        access_token = AuthService.create_access_token(data={"sub": str(user.id)})
         
         # Redirecionar com o token
         response = RedirectResponse(url="/calendar?msg=Integração+com+Google+Calendar+concluída+com+sucesso", status_code=303)
@@ -95,36 +95,6 @@ async def outlook_auth(current_user: User = Depends(get_current_user)):
     except Exception as e:
         logger.error(f"Erro ao obter URL de autenticação Outlook: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Erro ao gerar URL de autenticação: {str(e)}")
-
-@router.get("/google/callback")
-async def google_callback(
-    code: str = Query(...),
-    state: str = Query(...),
-    current_user: Optional[User] = Depends(get_optional_user)
-):
-    """Callback para autorização do Google Calendar"""
-    try:
-        result = await CalendarService.handle_google_callback(code, state)
-        
-        if not result.get("success"):
-            return RedirectResponse(url="/calendar/connect?error=Falha+na+integração+com+Google+Calendar", status_code=303)
-        
-        # Obter o token do usuário
-        user = await UserService.get_user_by_id(result["user_id"])
-        if not user:
-            raise HTTPException(status_code=404, detail="Usuário não encontrado")
-        
-        # Gerar novo token JWT
-        access_token = AuthService.create_access_token(data={"sub": user.email})
-        
-        # Redirecionar com o token
-        response = RedirectResponse(url="/calendar?msg=Integração+com+Google+Calendar+concluída+com+sucesso", status_code=303)
-        response.set_cookie(key="Authorization", value=f"Bearer {access_token}", httponly=True, secure=True, samesite="strict")
-        return response
-        
-    except Exception as e:
-        logger.error(f"Erro no callback do Google: {str(e)}")
-        return RedirectResponse(url="/calendar/connect?error=Erro+no+callback+do+Google", status_code=303)
 
 @router.post("/outlook/event")
 async def add_outlook_event(

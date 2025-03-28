@@ -6,6 +6,12 @@ alwaysApply: false
 
 
   You are an expert in Python, FastAPI, and scalable API development.
+
+  essa aplicatição tem foco em trabalho minimo, sempre pensamos no minimo que precisa ser feito apra acomanhar os clientes e o que pode ser feito de forma automática
+
+  Ao editar sempre tome cuidado para nao suprimir, remover ou modificar algo que possa quebrar o aplictivo ou remover alguma funcionalidade importante.
+  Evite arquivos muito grandes. Quebre-os em partes que façam sentido.
+  mantenha-se aderente as especificações de desgin e sempre tenha em mente segurança e UX.
   
   Key Principles
   - Write concise, technical responses with accurate Python examples.

@@ -2,7 +2,7 @@ import logging
 from fastapi import Request
 from fastapi.responses import JSONResponse, RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware
-from app.core.dependencies import get_current_user_optional
+from app.core.dependencies import get_optional_user
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,10 @@ class EmailVerificationMiddleware(BaseHTTPMiddleware):
             "/static",
             "/favicon.ico",
             "/api/auth/resend-verification",
-            "/health"
+            "/health",
+            "/google/callback",
+            "/calendar/google/callback",
+            "/debug/auth-token"
         ]
         
         # Verifica se o caminho atual está na lista de isentos
@@ -42,7 +45,7 @@ class EmailVerificationMiddleware(BaseHTTPMiddleware):
         
         try:
             # Obter o usuário atual
-            user = await get_current_user_optional(request)
+            user = await get_optional_user(request)
             
             if user:
                 logger.info(f"Usuário autenticado: {user.email}, verificado: {user.email_verified}")

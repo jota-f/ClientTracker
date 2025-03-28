@@ -44,18 +44,30 @@ async function resendVerification() {
     button.textContent = 'Enviando...';
 
     try {
+        // Tenta obter o email temporário
+        const email = localStorage.getItem('temp_email');
+        if (!email) {
+            alert('Erro: Email não encontrado. Por favor, tente fazer login novamente.');
+            window.location.href = '/login';
+            return;
+        }
+
         const response = await fetch('/api/auth/resend-verification', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
-            }
+            },
+            body: JSON.stringify({ email: email })
         });
 
         if (response.ok) {
-            alert('Email de verificação reenviado com sucesso!');
+            alert('Email de verificação reenviado com sucesso! Por favor, verifique sua caixa de entrada e spam.');
         } else {
             const data = await response.json();
             alert(data.detail || 'Erro ao reenviar email');
+            if (response.status === 404) {
+                window.location.href = '/login';
+            }
         }
     } catch (error) {
         alert('Erro ao reenviar email');
@@ -64,5 +76,13 @@ async function resendVerification() {
         button.textContent = 'Reenviar Email de Verificação';
     }
 }
+
+// Verifica se tem email salvo ao carregar a página
+document.addEventListener('DOMContentLoaded', function() {
+    const email = localStorage.getItem('temp_email');
+    if (!email) {
+        window.location.href = '/login';
+    }
+});
 </script>
 {% endblock %} 

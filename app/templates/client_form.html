@@ -79,22 +79,83 @@ document.getElementById('clientForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
     const formData = new FormData(e.target);
-    const data = {
-        name: formData.get('name'),
-        company: formData.get('company'),
-        email: formData.get('email'),
-        phone: formData.get('phone'),
-        status: formData.get('status'),
-        sales_potential: parseInt(formData.get('sales_potential')),
-        next_followup: new Date(formData.get('next_followup')).toISOString(),
-        last_contact: new Date().toISOString(),
-        interaction_history: [],
-        pending_tasks: []
+    
+    // Formatação correta das datas com timezone UTC
+    const nextFollowupDate = new Date(formData.get('next_followup'));
+    const lastContactDate = new Date();
+    
+    // Função para garantir formato ISO8601 com timezone Z (UTC)
+    const formatDateUTC = (date) => {
+        try {
+            // Garante que a data tenha timezone UTC
+            return new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString();
+        } catch (error) {
+            console.error('Erro ao formatar data:', error);
+            return new Date().toISOString(); // Fallback para data atual
+        }
     };
+    
+    // Obter o ID do cliente atual (se existir)
+    const clientId = '{{ client.id if client else "" }}';
+    
+    let data = {};
+    
+    if (clientId) {
+        // Se estiver editando, obtenha os dados existentes primeiro
+        try {
+            const response = await fetch(`/api/v1/clients/${clientId}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Erro ao obter dados do cliente');
+            }
+            
+            // Dados existentes que serão modificados
+            data = await response.json();
+            
+            // Atualizar campos do formulário
+            data.name = formData.get('name');
+            data.company = formData.get('company');
+            data.email = formData.get('email');
+            data.phone = formData.get('phone');
+            data.status = formData.get('status');
+            data.sales_potential = parseInt(formData.get('sales_potential'));
+            data.next_followup = formatDateUTC(nextFollowupDate);
+            
+            // Manter o last_contact existente se estiver editando
+            // Apenas atualize se estiver fazendo uma interação
+            if (!data.last_contact) {
+                data.last_contact = formatDateUTC(lastContactDate);
+            }
+            
+        } catch (error) {
+            console.error('Erro ao obter cliente existente:', error);
+            alert('Erro ao obter dados do cliente. Tente novamente.');
+            return;
+        }
+    } else {
+        // Se estiver criando um novo cliente
+        data = {
+            name: formData.get('name'),
+            company: formData.get('company'),
+            email: formData.get('email'),
+            phone: formData.get('phone'),
+            status: formData.get('status'),
+            sales_potential: parseInt(formData.get('sales_potential')),
+            next_followup: formatDateUTC(nextFollowupDate),
+            last_contact: formatDateUTC(lastContactDate),
+            interaction_history: [],
+            pending_tasks: []
+        };
+    }
 
     console.log("Dados enviados para o servidor:", data);
 
-    const clientId = '{{ client.id if client else "" }}';
     const method = clientId ? 'PUT' : 'POST';
     const url = `/api/v1/clients${clientId ? '/' + clientId : ''}`;
 
@@ -102,13 +163,16 @@ document.getElementById('clientForm').addEventListener('submit', async (e) => {
         const response = await fetch(url, {
             method: method,
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
             },
             body: JSON.stringify(data)
         });
 
         if (!response.ok) {
             const errorData = await response.json();
+            console.error('Erro detalhado:', errorData);
             throw new Error(errorData.detail || 'Erro ao salvar cliente');
         }
 
@@ -117,7 +181,7 @@ document.getElementById('clientForm').addEventListener('submit', async (e) => {
         window.location.href = '/clients';
     } catch (error) {
         console.error('Error:', error);
-        alert(error.message || 'Erro ao salvar cliente');
+        alert(error.message || 'Erro ao salvar cliente. Verifique se todos os campos foram preenchidos corretamente.');
     }
 });
 </script>

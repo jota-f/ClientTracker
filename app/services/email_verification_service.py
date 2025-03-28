@@ -4,6 +4,7 @@ from app.core.config import settings
 from app.core.database import Database
 from bson import ObjectId
 from datetime import datetime, timezone
+import traceback
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,11 @@ class EmailVerificationService:
             logger.info(f"Enviando email de verificação para {email} com token {token[:10]}...")
             verification_link = f"{settings.APP_URL}/auth/verify-email/{token}"
             logger.info(f"Link de verificação: {verification_link}")
+            
+            # Log dos parâmetros de email
+            logger.info(f"Configuração de email: MAIL_SERVER={settings.MAIL_SERVER}, MAIL_PORT={settings.MAIL_PORT}")
+            logger.info(f"MAIL_USERNAME={settings.MAIL_USERNAME}, MAIL_FROM={settings.MAIL_FROM}")
+            logger.info(f"USE_CREDENTIALS={settings.USE_CREDENTIALS}, TLS={settings.MAIL_TLS}, SSL={settings.MAIL_SSL}")
 
             # Criar o corpo do email
             html_content = f"""
@@ -47,6 +53,7 @@ class EmailVerificationService:
             )
 
             # Enviar o email
+            logger.info(f"Enviando mensagem para {email}...")
             await self.fastmail.send_message(message)
             logger.info(f"Email de verificação enviado com sucesso para {email}")
             return True
@@ -54,17 +61,31 @@ class EmailVerificationService:
         except Exception as e:
             logger.error(f"Erro ao enviar email de verificação para {email}")
             logger.error(f"Erro: {str(e)}")
+            logger.error(traceback.format_exc())
             return False
 
     async def verify_email(self, token: str) -> bool:
         """Verifica o email do usuário usando o token."""
         try:
+            logger.info(f"Iniciando verificação de email com token: {token[:10]}...")
+            
             # Buscar usuário com o token
             user = await self.db["users"].find_one({"verification_token": token})
             
             if not user:
                 logger.warning(f"Token de verificação não encontrado: {token[:10]}...")
+                # Registrar todos os tokens para depuração
+                all_users = await self.db["users"].find({
+                    "verification_token": {"$ne": None}
+                }).to_list(length=100)
+                
+                if all_users:
+                    tokens = [u.get("verification_token", "")[:10] for u in all_users]
+                    logger.debug(f"Tokens ativos no sistema: {tokens}")
+                
                 return False
+            
+            logger.info(f"Usuário encontrado: {user.get('email')} para token: {token[:10]}...")    
                 
             # Verificar se o token expirou
             if user.get("verification_token_expires"):
@@ -110,6 +131,5 @@ class EmailVerificationService:
             
         except Exception as e:
             logger.error(f"Erro ao verificar email: {str(e)}")
-            import traceback
             logger.error(traceback.format_exc())
             return False 

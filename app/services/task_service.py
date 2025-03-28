@@ -118,23 +118,92 @@ class TaskService:
             raise
 
     @staticmethod
-    async def get_task_by_id(task_id: str) -> Optional[Task]:
-        """Recupera uma tarefa pelo ID."""
+    async def get_task_by_id(task_id: str, user_id: str = None) -> Optional[Task]:
+        """
+        Recupera uma tarefa pelo ID.
+        
+        Args:
+            task_id: O ID da tarefa a ser recuperada
+            user_id: Se fornecido, verifica se a tarefa pertence a este usuário
+        """
         try:
             db = await get_db()
-            task_data = await db[TaskService.COLLECTION].find_one({"_id": ObjectId(task_id)})
+            
+            # Criar consulta
+            query = {"_id": ObjectId(task_id)}
+            
+            # Se user_id for fornecido, verificar propriedade
+            if user_id:
+                query["user_id"] = user_id
+                logger.info(f"Buscando tarefa {task_id} com verificação de usuário {user_id}")
+            else:
+                logger.info(f"Buscando tarefa {task_id} sem verificação de usuário")
+                
+            task_data = await db[TaskService.COLLECTION].find_one(query)
             if task_data:
-                return Task(**task_data)
+                # Verificar se tem client_id mas não tem client_name
+                if task_data.get("client_id") and (not task_data.get("client_name") or task_data.get("client_name") is None):
+                    try:
+                        client = await ClientService.get_client_by_id(task_data["client_id"])
+                        if client:
+                            task_data["client_name"] = client.name
+                            logger.info(f"Nome do cliente atualizado para tarefa {task_id}: {client.name}")
+                            
+                            # Atualizar o registro no banco
+                            await db[TaskService.COLLECTION].update_one(
+                                {"_id": ObjectId(task_id)},
+                                {"$set": {"client_name": client.name}}
+                            )
+                    except Exception as e:
+                        logger.error(f"Erro ao buscar nome do cliente para tarefa {task_id}: {e}")
+                
+                return Task.parse_obj(task_data)
+            
+            # Se user_id foi fornecido e não encontrou, verificar se a tarefa existe mas é de outro usuário
+            if user_id:
+                task_any_user = await db[TaskService.COLLECTION].find_one({"_id": ObjectId(task_id)})
+                if task_any_user:
+                    logger.warning(f"Tarefa {task_id} existe mas pertence ao usuário {task_any_user.get('user_id')}, não ao usuário {user_id}")
+                    return None
+            
+            logger.warning(f"Tarefa não encontrada: {task_id}")
             return None
         except Exception as e:
             logger.error(f"Erro ao buscar tarefa: {e}")
             return None
 
     @staticmethod
-    async def update_task(task_id: str, update_data: Dict[str, Any]) -> Optional[Task]:
-        """Atualiza uma tarefa existente."""
+    async def update_task(task_id: str, update_data: Dict[str, Any], user_id: str = None) -> Optional[Task]:
+        """
+        Atualiza uma tarefa existente.
+        
+        Args:
+            task_id: ID da tarefa a ser atualizada
+            update_data: Dados para atualizar
+            user_id: Se fornecido, verifica se a tarefa pertence a este usuário
+        """
         try:
             db = await get_db()
+            
+            # Primeiro, verifica se a tarefa existe e se pertence ao usuário correto
+            # Criar consulta para verificar propriedade
+            query = {"_id": ObjectId(task_id)}
+            if user_id:
+                query["user_id"] = user_id
+                logger.info(f"Verificando propriedade da tarefa {task_id} para usuário {user_id}")
+            
+            # Verifica se a tarefa existe e pertence ao usuário
+            existing_task = await db[TaskService.COLLECTION].find_one(query)
+            if not existing_task:
+                if user_id:
+                    # Verifica se a tarefa existe, mas pertence a outro usuário
+                    any_task = await db[TaskService.COLLECTION].find_one({"_id": ObjectId(task_id)})
+                    if any_task:
+                        logger.warning(f"Tentativa de atualizar tarefa {task_id} de outro usuário. Proprietário: {any_task.get('user_id')}, Solicitante: {user_id}")
+                        return None
+                
+                logger.warning(f"Tarefa {task_id} não encontrada para atualização")
+                return None
             
             # Se houver um client_id, verifica se o cliente existe e atualiza o client_name
             if update_data.get("client_id"):
@@ -147,42 +216,79 @@ class TaskService:
             
             # Atualiza a tarefa no banco de dados
             await db[TaskService.COLLECTION].update_one(
-                {"_id": ObjectId(task_id)},
+                query,  # Usa a mesma query que verificou a propriedade
                 {"$set": update_data}
             )
             
-            # Retorna a tarefa atualizada
-            return await TaskService.get_task_by_id(task_id)
+            # Retorna a tarefa atualizada, mantendo a verificação de propriedade
+            return await TaskService.get_task_by_id(task_id, user_id)
         except Exception as e:
             logger.error(f"Erro ao atualizar tarefa: {e}")
             return None
 
     @staticmethod
-    async def delete_task(task_id: str) -> bool:
-        """Exclui uma tarefa pelo ID."""
+    async def delete_task(task_id: str, user_id: str = None) -> bool:
+        """
+        Exclui uma tarefa pelo ID.
+        
+        Args:
+            task_id: ID da tarefa a ser excluída
+            user_id: Se fornecido, verifica se a tarefa pertence a este usuário
+        """
         try:
             db = await get_db()
-            result = await db[TaskService.COLLECTION].delete_one({"_id": ObjectId(task_id)})
+            
+            # Criar consulta para verificar propriedade
+            query = {"_id": ObjectId(task_id)}
+            if user_id:
+                query["user_id"] = user_id
+                logger.info(f"Verificando propriedade da tarefa {task_id} para exclusão pelo usuário {user_id}")
+            
+            # Tenta excluir a tarefa
+            result = await db[TaskService.COLLECTION].delete_one(query)
+            
+            # Se nenhuma tarefa foi excluída e temos user_id, verifica se ela existe mas é de outro usuário
+            if result.deleted_count == 0 and user_id:
+                any_task = await db[TaskService.COLLECTION].find_one({"_id": ObjectId(task_id)})
+                if any_task:
+                    logger.warning(f"Tentativa de excluir tarefa {task_id} de outro usuário. Proprietário: {any_task.get('user_id')}, Solicitante: {user_id}")
+            
             return result.deleted_count > 0
         except Exception as e:
             logger.error(f"Erro ao excluir tarefa: {e}")
             return False
 
     @staticmethod
-    async def get_all_tasks(user_id: str = None) -> List[Task]:
-        """Recupera todas as tarefas, opcionalmente filtradas por usuário."""
+    async def get_all_tasks(user_id: str = None, include_all: bool = False) -> List[Task]:
+        """
+        Recupera todas as tarefas, filtradas por usuário por padrão.
+        
+        Args:
+            user_id: ID do usuário para filtrar as tarefas
+            include_all: Se True e user_id for None, retorna todas as tarefas (apenas para admin)
+        """
         try:
             db = await get_db()
             
-            # Criar filtro baseado no user_id, se fornecido
+            # Criar filtro baseado no user_id
             query = {}
+            
+            # Garantir filtragem por usuário a menos que explicitamente solicitado para mostrar todas
             if user_id:
                 query["user_id"] = user_id
                 logger.info(f"Filtrando tarefas por user_id: {user_id}")
+            elif not include_all:
+                # Caso não haja user_id e não foi solicitado para incluir todas,
+                # retornar lista vazia por segurança
+                logger.warning("Tentativa de acessar todas as tarefas sem user_id e sem permissão para incluir todas")
+                return []
+            else:
+                logger.info("Retornando todas as tarefas (modo admin)")
             
             # Buscar tarefas com o filtro aplicado
+            logger.info(f"Executando consulta de tarefas com filtro: {query}")
             tasks_data = await db[TaskService.COLLECTION].find(query).to_list(length=None)
-            logger.info(f"Recuperadas {len(tasks_data)} tarefas")
+            logger.info(f"Recuperadas {len(tasks_data)} tarefas do MongoDB")
             
             tasks = []
             for task_data in tasks_data:
@@ -199,61 +305,124 @@ class TaskService:
             return []
 
     @staticmethod
-    async def get_tasks_by_client(client_id: str) -> List[Task]:
-        """Recupera todas as tarefas de um cliente específico."""
+    async def get_tasks_by_client(client_id: str, user_id: str = None) -> List[Task]:
+        """Recupera todas as tarefas associadas a um cliente."""
         try:
             db = await get_db()
-            tasks_data = await db[TaskService.COLLECTION].find({"client_id": client_id}).to_list(length=None)
-            return [Task(**task) for task in tasks_data]
+            
+            # Criar filtro
+            query = {"client_id": client_id}
+            
+            # Adicionar filtro de usuário se fornecido
+            if user_id:
+                query["user_id"] = user_id
+                logger.info(f"Filtrando tarefas do cliente {client_id} para usuário {user_id}")
+            
+            tasks_data = await db[TaskService.COLLECTION].find(query).to_list(length=None)
+            
+            tasks = []
+            for task_data in tasks_data:
+                task_data["id"] = str(task_data.pop("_id"))
+                tasks.append(Task.parse_obj(task_data))
+            
+            return tasks
         except Exception as e:
-            logger.error(f"Erro ao buscar tarefas do cliente: {e}")
+            logger.error(f"Erro ao recuperar tarefas por cliente: {e}")
             return []
 
     @staticmethod
-    async def get_tasks_by_status(status: TaskStatus) -> List[Task]:
-        """Recupera tarefas por status."""
+    async def get_tasks_by_status(status: TaskStatus, user_id: str = None) -> List[Task]:
+        """Recupera todas as tarefas com um determinado status."""
         try:
             db = await get_db()
-            tasks_data = await db[TaskService.COLLECTION].find({"status": status}).to_list(length=None)
-            return [Task(**task) for task in tasks_data]
+            
+            # Criar filtro
+            query = {"status": status}
+            
+            # Adicionar filtro de usuário se fornecido
+            if user_id:
+                query["user_id"] = user_id
+                logger.info(f"Filtrando tarefas com status {status} para usuário {user_id}")
+            
+            tasks_data = await db[TaskService.COLLECTION].find(query).to_list(length=None)
+            
+            tasks = []
+            for task_data in tasks_data:
+                task_data["id"] = str(task_data.pop("_id"))
+                tasks.append(Task.parse_obj(task_data))
+            
+            return tasks
         except Exception as e:
-            logger.error(f"Erro ao buscar tarefas por status: {e}")
+            logger.error(f"Erro ao recuperar tarefas por status: {e}")
             return []
 
     @staticmethod
-    async def get_tasks_by_priority(priority: TaskPriority) -> List[Task]:
-        """Recupera tarefas por prioridade (quadrante da Matriz Eisenhower)."""
+    async def get_tasks_by_priority(priority: TaskPriority, user_id: str = None) -> List[Task]:
+        """Recupera todas as tarefas com uma determinada prioridade."""
         try:
             db = await get_db()
-            tasks_data = await db[TaskService.COLLECTION].find({"priority": priority}).to_list(length=None)
-            return [Task(**task) for task in tasks_data]
+            
+            # Criar filtro
+            query = {"priority": priority}
+            
+            # Adicionar filtro de usuário se fornecido
+            if user_id:
+                query["user_id"] = user_id
+                logger.info(f"Filtrando tarefas com prioridade {priority} para usuário {user_id}")
+            
+            tasks_data = await db[TaskService.COLLECTION].find(query).to_list(length=None)
+            
+            tasks = []
+            for task_data in tasks_data:
+                task_data["id"] = str(task_data.pop("_id"))
+                tasks.append(Task.parse_obj(task_data))
+            
+            return tasks
         except Exception as e:
-            logger.error(f"Erro ao buscar tarefas por prioridade: {e}")
+            logger.error(f"Erro ao recuperar tarefas por prioridade: {e}")
             return []
 
     @staticmethod
-    async def add_comment_to_task(task_id: str, comment_text: str) -> Optional[Task]:
+    async def add_comment_to_task(task_id: str, comment_text: str, user_id: str = None) -> Optional[Task]:
         """Adiciona um comentário a uma tarefa."""
         try:
             db = await get_db()
             
-            # Cria o comentário
-            comment = TaskComment(
-                text=comment_text,
-                created_at=datetime.now(timezone.utc)
-            )
+            # Verificar se a tarefa existe e pertence ao usuário
+            query = {"_id": ObjectId(task_id)}
+            if user_id:
+                query["user_id"] = user_id
+                logger.info(f"Verificando propriedade da tarefa {task_id} para adicionar comentário")
             
-            # Adiciona o comentário à tarefa
+            task_data = await db[TaskService.COLLECTION].find_one(query)
+            if not task_data:
+                # Se user_id foi fornecido e não encontrou, verificar se a tarefa existe para outro usuário
+                if user_id:
+                    any_task = await db[TaskService.COLLECTION].find_one({"_id": ObjectId(task_id)})
+                    if any_task:
+                        logger.warning(f"Tentativa de adicionar comentário à tarefa {task_id} de outro usuário. Proprietário: {any_task.get('user_id')}")
+                        return None
+                
+                logger.warning(f"Tarefa {task_id} não encontrada para adicionar comentário")
+                return None
+            
+            # Criar comentário
+            comment = {
+                "text": comment_text,
+                "created_at": datetime.now(timezone.utc)
+            }
+            
+            # Atualizar a tarefa com o novo comentário
             await db[TaskService.COLLECTION].update_one(
-                {"_id": ObjectId(task_id)},
+                query,
                 {
-                    "$push": {"comments": comment.dict()},
+                    "$push": {"comments": comment},
                     "$set": {"updated_at": datetime.now(timezone.utc)}
                 }
             )
             
-            # Retorna a tarefa atualizada
-            return await TaskService.get_task_by_id(task_id)
+            # Retornar a tarefa atualizada
+            return await TaskService.get_task_by_id(task_id, user_id)
         except Exception as e:
             logger.error(f"Erro ao adicionar comentário: {e}")
             return None
@@ -304,24 +473,22 @@ class TaskService:
             }
 
     @staticmethod
-    async def update_task_status(task_id: str, new_status: TaskStatus) -> Optional[Task]:
-        """Atualiza o status de uma tarefa (para funcionalidade drag-and-drop)."""
+    async def update_task_status(task_id: str, new_status: TaskStatus, user_id: str = None) -> Optional[Task]:
+        """
+        Atualiza o status de uma tarefa.
+        
+        Args:
+            task_id: ID da tarefa a atualizar
+            new_status: Novo status da tarefa
+            user_id: Se fornecido, verifica se a tarefa pertence a este usuário
+        """
         try:
-            db = await get_db()
-            
-            # Atualiza o status e o timestamp
-            await db[TaskService.COLLECTION].update_one(
-                {"_id": ObjectId(task_id)},
-                {
-                    "$set": {
-                        "status": new_status,
-                        "updated_at": datetime.now(timezone.utc)
-                    }
-                }
+            # Usar o método update_task com verificação de usuário
+            return await TaskService.update_task(
+                task_id, 
+                {"status": new_status}, 
+                user_id=user_id
             )
-            
-            # Retorna a tarefa atualizada
-            return await TaskService.get_task_by_id(task_id)
         except Exception as e:
             logger.error(f"Erro ao atualizar status da tarefa: {e}")
             return None

@@ -225,18 +225,41 @@ app.add_middleware(EmailVerificationMiddleware)
 # Root route
 @app.get("/")
 async def index(request: Request, current_user: User = Depends(get_current_user)):
-    # Obter métricas apenas do usuário autenticado
-    metrics = await DashboardService.get_dashboard_metrics(user_id=str(current_user.id))
-    # Obter apenas follow-ups do usuário autenticado
-    followups = await ClientService.get_upcoming_followups(user_id=str(current_user.id))
+    # Obter métricas avançadas para o usuário autenticado
+    metrics = await DashboardService.get_advanced_dashboard_metrics(user_id=str(current_user.id))
     
     context = {
         "request": request,
         "metrics": metrics,
-        "followups": followups,
         "user": current_user
     }
-    return templates.TemplateResponse("index.html", context)
+    return templates.TemplateResponse("dashboard.html", context)
+
+# Dashboard avançado
+@app.get("/dashboard")
+async def advanced_dashboard(request: Request, current_user: User = Depends(get_current_user)):
+    # Obter métricas avançadas para o usuário autenticado
+    metrics = await DashboardService.get_advanced_dashboard_metrics(user_id=str(current_user.id))
+    
+    context = {
+        "request": request,
+        "metrics": metrics,
+        "user": current_user
+    }
+    return templates.TemplateResponse("dashboard.html", context)
+
+# Revisão semanal
+@app.get("/weekly-review")
+async def weekly_review(request: Request, current_user: User = Depends(get_current_user)):
+    # Obter métricas de revisão semanal para o usuário autenticado
+    metrics = await DashboardService.get_weekly_review_metrics(user_id=str(current_user.id))
+    
+    context = {
+        "request": request,
+        "metrics": metrics,
+        "user": current_user
+    }
+    return templates.TemplateResponse("weekly_review.html", context)
 
 # Auth routes
 @app.get("/login")
@@ -338,9 +361,10 @@ async def kanban_board_page(request: Request, current_user: User = Depends(get_c
 async def eisenhower_matrix_page(request: Request, current_user: User = Depends(get_current_user)):
     # Obter matriz com tarefas do usuário autenticado
     matrix = await TaskService.get_eisenhower_matrix(user_id=str(current_user.id))
+    now = datetime.now(timezone.utc)
     return templates.TemplateResponse(
-        "eisenhower.html",
-        {"request": request, "matrix": matrix, "user": current_user}
+        "priority_matrix.html",
+        {"request": request, "matrix": matrix, "now": now, "user": current_user}
     )
 
 @app.get("/tasks/priority-matrix")

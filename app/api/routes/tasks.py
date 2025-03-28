@@ -64,10 +64,19 @@ async def create_task(task_data: dict = Body(...), current_user: User = Depends(
         )
 
 @router.get("/{task_id}", response_model=Task)
-async def get_task(task_id: str):
-    """Recupera uma tarefa pelo ID."""
-    task = await TaskService.get_task_by_id(task_id)
+async def get_task(task_id: str, current_user: User = Depends(get_current_user)):
+    """Obtém uma tarefa pelo ID."""
+    task = await TaskService.get_task_by_id(task_id, user_id=str(current_user.id))
     if not task:
+        # Verifica se a tarefa existe mas pertence a outro usuário
+        any_task = await TaskService.get_task_by_id(task_id)
+        if any_task:
+            logger.warning(f"Usuário {current_user.email} tentou acessar tarefa {task_id} que pertence a outro usuário")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Você não tem permissão para acessar esta tarefa"
+            )
+        
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Tarefa não encontrada"
@@ -75,25 +84,42 @@ async def get_task(task_id: str):
     return task
 
 @router.put("/{task_id}", response_model=Task)
-async def update_task(task_id: str, update_data: dict = Body(...)):
-    """Atualiza uma tarefa."""
-    logger.info(f"Atualizando tarefa {task_id}")
-    updated_task = await TaskService.update_task(task_id, update_data)
+async def update_task(task_id: str, update_data: dict = Body(...), current_user: User = Depends(get_current_user)):
+    """Atualiza uma tarefa existente."""
+    updated_task = await TaskService.update_task(task_id, update_data, user_id=str(current_user.id))
     if not updated_task:
+        # Verifica se a tarefa existe mas pertence a outro usuário
+        any_task = await TaskService.get_task_by_id(task_id)
+        if any_task:
+            logger.warning(f"Usuário {current_user.email} tentou atualizar tarefa {task_id} que pertence a outro usuário")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Você não tem permissão para editar esta tarefa"
+            )
+            
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Tarefa não encontrada ou erro ao atualizar"
+            detail="Tarefa não encontrada"
         )
     return updated_task
 
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_task(task_id: str):
+async def delete_task(task_id: str, current_user: User = Depends(get_current_user)):
     """Exclui uma tarefa."""
-    success = await TaskService.delete_task(task_id)
+    success = await TaskService.delete_task(task_id, user_id=str(current_user.id))
     if not success:
+        # Verifica se a tarefa existe mas pertence a outro usuário
+        any_task = await TaskService.get_task_by_id(task_id)
+        if any_task:
+            logger.warning(f"Usuário {current_user.email} tentou excluir tarefa {task_id} que pertence a outro usuário")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Você não tem permissão para excluir esta tarefa"
+            )
+            
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Tarefa não encontrada ou erro ao excluir"
+            detail="Tarefa não encontrada"
         )
     return None
 
@@ -103,39 +129,68 @@ async def get_all_tasks(current_user: User = Depends(get_current_user)):
     return await TaskService.get_all_tasks(user_id=str(current_user.id))
 
 @router.get("/client/{client_id}", response_model=List[Task])
-async def get_client_tasks(client_id: str):
-    """Recupera todas as tarefas de um cliente específico."""
-    return await TaskService.get_tasks_by_client(client_id)
+async def get_tasks_by_client(client_id: str, current_user: User = Depends(get_current_user)):
+    """Recupera todas as tarefas associadas a um cliente."""
+    return await TaskService.get_tasks_by_client(client_id, user_id=str(current_user.id))
 
 @router.get("/status/{status}", response_model=List[Task])
-async def get_tasks_by_status(status: TaskStatus):
-    """Recupera tarefas por status."""
-    return await TaskService.get_tasks_by_status(status)
+async def get_tasks_by_status(status: TaskStatus, current_user: User = Depends(get_current_user)):
+    """Recupera todas as tarefas com um determinado status."""
+    return await TaskService.get_tasks_by_status(status, user_id=str(current_user.id))
 
 @router.get("/priority/{priority}", response_model=List[Task])
-async def get_tasks_by_priority(priority: TaskPriority):
-    """Recupera tarefas por prioridade (quadrante da Matriz Eisenhower)."""
-    return await TaskService.get_tasks_by_priority(priority)
+async def get_tasks_by_priority(priority: TaskPriority, current_user: User = Depends(get_current_user)):
+    """Recupera todas as tarefas com uma determinada prioridade."""
+    return await TaskService.get_tasks_by_priority(priority, user_id=str(current_user.id))
 
 @router.post("/{task_id}/comments", response_model=Task)
-async def add_comment(task_id: str, comment_text: str = Body(..., embed=True)):
+async def add_comment(task_id: str, comment: dict = Body(...), current_user: User = Depends(get_current_user)):
     """Adiciona um comentário a uma tarefa."""
-    updated_task = await TaskService.add_comment_to_task(task_id, comment_text)
-    if not updated_task:
+    if "text" not in comment or not comment["text"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Texto do comentário é obrigatório"
+        )
+    
+    task = await TaskService.add_comment_to_task(task_id, comment["text"], user_id=str(current_user.id))
+    if not task:
+        # Verifica se a tarefa existe mas pertence a outro usuário
+        any_task = await TaskService.get_task_by_id(task_id)
+        if any_task:
+            logger.warning(f"Usuário {current_user.email} tentou adicionar comentário à tarefa {task_id} que pertence a outro usuário")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Você não tem permissão para comentar nesta tarefa"
+            )
+            
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Tarefa não encontrada ou erro ao adicionar comentário"
+            detail="Tarefa não encontrada"
         )
-    return updated_task
+    
+    return task
 
 @router.patch("/{task_id}/status", response_model=Task)
-async def update_status(task_id: str, new_status: TaskStatus = Body(..., embed=True)):
-    """Atualiza o status de uma tarefa (para funcionalidade drag-and-drop)."""
-    updated_task = await TaskService.update_task_status(task_id, new_status)
+async def update_task_status(
+    task_id: str, 
+    new_status: TaskStatus = Body(..., embed=True),
+    current_user: User = Depends(get_current_user)
+):
+    """Atualiza o status de uma tarefa."""
+    updated_task = await TaskService.update_task_status(task_id, new_status, user_id=str(current_user.id))
     if not updated_task:
+        # Verifica se a tarefa existe mas pertence a outro usuário
+        any_task = await TaskService.get_task_by_id(task_id)
+        if any_task:
+            logger.warning(f"Usuário {current_user.email} tentou atualizar status da tarefa {task_id} que pertence a outro usuário")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Você não tem permissão para atualizar esta tarefa"
+            )
+            
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Tarefa não encontrada ou erro ao atualizar status"
+            detail="Tarefa não encontrada"
         )
     return updated_task
 
@@ -145,20 +200,25 @@ async def get_eisenhower_matrix(current_user: User = Depends(get_current_user)):
     return await TaskService.get_eisenhower_matrix(user_id=str(current_user.id))
 
 @router.patch("/{task_id}/priority", response_model=Task)
-async def update_priority(task_id: str, new_priority: TaskPriority = Body(..., embed=True)):
-    """Atualiza a prioridade de uma tarefa (para funcionalidade de mudança de prioridade)."""
-    try:
-        logger.info(f"Atualizando prioridade da tarefa {task_id} para {new_priority}")
-        updated_task = await TaskService.update_task(task_id, {"priority": new_priority})
-        if not updated_task:
+async def update_task_priority(
+    task_id: str, 
+    new_priority: TaskPriority = Body(..., embed=True),
+    current_user: User = Depends(get_current_user)
+):
+    """Atualiza a prioridade de uma tarefa."""
+    updated_task = await TaskService.update_task(task_id, {"priority": new_priority}, user_id=str(current_user.id))
+    if not updated_task:
+        # Verifica se a tarefa existe mas pertence a outro usuário
+        any_task = await TaskService.get_task_by_id(task_id)
+        if any_task:
+            logger.warning(f"Usuário {current_user.email} tentou atualizar prioridade da tarefa {task_id} que pertence a outro usuário")
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Tarefa não encontrada ou erro ao atualizar prioridade"
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Você não tem permissão para atualizar esta tarefa"
             )
-        return updated_task
-    except Exception as e:
-        logger.error(f"Erro ao atualizar prioridade: {e}", exc_info=True)
+            
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao atualizar prioridade da tarefa: {str(e)}"
-        ) 
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tarefa não encontrada"
+        )
+    return updated_task 

@@ -85,35 +85,74 @@
                     </div>
                     <div class="sm:ml-6 sm:flex sm:space-x-8">
                         <a href="/" class="border-transparent text-gray-500 hover:border-indigo-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                            Dashboard
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" />
+                                <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" />
+                            </svg>
+                            Indicadores
                         </a>
-                        <a href="/clients" class="border-transparent text-gray-500 hover:border-indigo-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                            Clientes
-                        </a>
-                        <a href="/tasks" class="border-transparent text-gray-500 hover:border-indigo-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                            Tarefas
-                        </a>
+
+                        <!-- Menu de Clientes -->
+                        <div class="relative inline-flex items-center">
+                            <button type="button" class="border-transparent text-gray-500 hover:border-indigo-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium group" id="clients-menu" aria-expanded="false" aria-haspopup="true">
+                                <span>Clientes</span>
+                                <svg class="ml-2 h-5 w-5 text-gray-400 group-hover:text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 011.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                            <div class="hidden origin-top-right absolute right-0 top-full mt-1 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50" role="menu" aria-orientation="vertical" aria-labelledby="clients-menu">
+                                <div class="py-1" role="none">
+                                    <a href="/clients" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100" role="menuitem">Lista de Clientes</a>
+                                    <a href="/clients/add" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100" role="menuitem">Novo Cliente</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Menu de Análises -->
+                        <div class="relative inline-flex items-center">
+                            <button type="button" class="border-transparent text-gray-500 hover:border-indigo-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium group" id="analytics-menu" aria-expanded="false" aria-haspopup="true">
+                                <span>Análises</span>
+                                <svg class="ml-2 h-5 w-5 text-gray-400 group-hover:text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 011.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                            <div class="hidden origin-top-right absolute right-0 top-full mt-1 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50" role="menu" aria-orientation="vertical" aria-labelledby="analytics-menu">
+                                <div class="py-1" role="none">
+                                    <a href="/weekly-review" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100" role="menuitem">
+                                        <div class="flex items-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                                            </svg>
+                                            Revisão Semanal
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Menu de Tarefas -->
+                        <div class="relative inline-flex items-center">
+                            <button type="button" class="border-transparent text-gray-500 hover:border-indigo-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium group" id="tasks-menu" aria-expanded="false" aria-haspopup="true">
+                                <span>Tarefas</span>
+                                <svg class="ml-2 h-5 w-5 text-gray-400 group-hover:text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 011.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                            <div class="hidden origin-top-right absolute right-0 top-full mt-1 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50" role="menu" aria-orientation="vertical" aria-labelledby="tasks-menu">
+                                <div class="py-1" role="none">
+                                    <a href="/tasks" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100" role="menuitem">Lista de Tarefas</a>
+                                    <a href="/tasks/kanban" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100" role="menuitem">Kanban</a>
+                                    <a href="/tasks/priority-matrix" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100" role="menuitem">PriorityMatrix™</a>
+                                </div>
+                            </div>
+                        </div>
+
                         <a href="/calendar" class="border-transparent text-gray-500 hover:border-indigo-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
                             </svg>
                             Calendário
                         </a>
-                        <div class="relative inline-flex items-center">
-                            <button type="button" class="border-transparent text-gray-500 hover:border-indigo-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium group" id="task-views-menu" aria-expanded="false" aria-haspopup="true">
-                                <span>Visualizações</span>
-                                <svg class="ml-2 h-5 w-5 text-gray-400 group-hover:text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 011.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                </svg>
-                            </button>
-                            <div class="hidden origin-top-right absolute right-0 top-full mt-1 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50" role="menu" aria-orientation="vertical" aria-labelledby="task-views-menu">
-                                <div class="py-1" role="none">
-                                    <a href="/tasks/kanban" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100" role="menuitem">Kanban</a>
-                                    
-                                    <a href="/tasks/priority-matrix" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100" role="menuitem">PriorityMatrix™</a>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
                 <div class="sm:ml-6 sm:flex sm:items-center">
@@ -160,30 +199,65 @@
         <div class="hidden sm:hidden mobile-menu" id="mobile-menu">
             <div class="pt-2 pb-3 space-y-1">
                 <a href="/" class="bg-indigo-50 border-indigo-500 text-indigo-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
-                    Dashboard
-                </a>
-                <a href="/clients" class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
-                    Clientes
-                </a>
-                <a href="/tasks" class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
-                    Tarefas
-                </a>
-                <a href="/calendar" class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
                     <div class="flex items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                            <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" />
+                            <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" />
                         </svg>
-                        Calendário
+                        Indicadores
                     </div>
                 </a>
+                
+                <!-- Mobile: Menu Cliente -->
                 <div x-data="{ open: false }" class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
-                    <button type="button" class="flex items-center w-full text-left" id="mobile-task-views-button">
-                        <span>Visualizações</span>
+                    <button type="button" class="flex items-center w-full text-left" id="mobile-clients-button">
+                        <span>Clientes</span>
                         <svg class="ml-2 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 011.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
                         </svg>
                     </button>
-                    <div class="hidden mt-2 pl-4 border-l border-gray-200" id="mobile-task-views">
+                    <div class="hidden mt-2 pl-4 border-l border-gray-200" id="mobile-clients-submenu">
+                        <a href="/clients" class="block py-2 text-gray-500 hover:text-gray-700">
+                            Lista de Clientes
+                        </a>
+                        <a href="/clients/add" class="block py-2 text-gray-500 hover:text-gray-700">
+                            Novo Cliente
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Mobile: Menu Análises -->
+                <div x-data="{ open: false }" class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
+                    <button type="button" class="flex items-center w-full text-left" id="mobile-analytics-button">
+                        <span>Análises</span>
+                        <svg class="ml-2 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 011.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    <div class="hidden mt-2 pl-4 border-l border-gray-200" id="mobile-analytics-submenu">
+                        <a href="/weekly-review" class="block py-2 text-gray-500 hover:text-gray-700">
+                            <div class="flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                                </svg>
+                                Revisão Semanal
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Mobile: Menu Tarefas -->
+                <div x-data="{ open: false }" class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
+                    <button type="button" class="flex items-center w-full text-left" id="mobile-tasks-button">
+                        <span>Tarefas</span>
+                        <svg class="ml-2 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 011.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    <div class="hidden mt-2 pl-4 border-l border-gray-200" id="mobile-tasks-submenu">
+                        <a href="/tasks" class="block py-2 text-gray-500 hover:text-gray-700">
+                            Lista de Tarefas
+                        </a>
                         <a href="/tasks/kanban" class="block py-2 text-gray-500 hover:text-gray-700">
                             Kanban
                         </a>
@@ -192,6 +266,15 @@
                         </a>
                     </div>
                 </div>
+                
+                <a href="/calendar" class="border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">
+                    <div class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                        </svg>
+                        Calendário
+                    </div>
+                </a>
             </div>
             <div class="pt-4 pb-3 border-t border-gray-200">
                 <div class="flex items-center px-4 mobile-user-menu hidden">
@@ -386,6 +469,41 @@
             if (e.key === 'access_token' || e.key === 'user') {
                 updateMobileAuthUI();
             }
+        });
+
+        // Handlers de menu adicionais
+        document.getElementById('clients-menu')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            const dropdown = this.closest('.relative').querySelector('[role="menu"]');
+            dropdown.classList.toggle('hidden');
+        });
+
+        document.getElementById('analytics-menu')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            const dropdown = this.closest('.relative').querySelector('[role="menu"]');
+            dropdown.classList.toggle('hidden');
+        });
+
+        document.getElementById('tasks-menu')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            const dropdown = this.closest('.relative').querySelector('[role="menu"]');
+            dropdown.classList.toggle('hidden');
+        });
+
+        // Mobile submenus
+        document.getElementById('mobile-clients-button')?.addEventListener('click', function() {
+            const submenu = document.getElementById('mobile-clients-submenu');
+            submenu.classList.toggle('hidden');
+        });
+
+        document.getElementById('mobile-analytics-button')?.addEventListener('click', function() {
+            const submenu = document.getElementById('mobile-analytics-submenu');
+            submenu.classList.toggle('hidden');
+        });
+
+        document.getElementById('mobile-tasks-button')?.addEventListener('click', function() {
+            const submenu = document.getElementById('mobile-tasks-submenu');
+            submenu.classList.toggle('hidden');
         });
     </script>
     

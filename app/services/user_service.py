@@ -1,25 +1,49 @@
 import logging
 from typing import Dict, Any, Optional, List
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from bson import ObjectId
 
-from app.models.user import User, CalendarIntegration
+from app.models.user import User, CalendarIntegration, NotificationSettings
 from app.core.database import Database
+import bcrypt
 
 # Configurar logging
 logger = logging.getLogger(__name__)
 
 class UserService:
     @staticmethod
+    async def initialize_notification_settings():
+        """
+        Atualiza todos os usuários existentes com configurações de notificação padrão
+        se eles ainda não tiverem
+        """
+        try:
+            default_settings = NotificationSettings().dict()
+            result = await Database.database["users"].update_many(
+                {"notification_settings": {"$exists": False}},
+                {"$set": {"notification_settings": default_settings}}
+            )
+            logger.info(f"Configurações de notificação atualizadas para {result.modified_count} usuários")
+        except Exception as e:
+            logger.error(f"Erro ao inicializar configurações de notificação: {str(e)}")
+
+    @staticmethod
     async def get_user_by_id(user_id: str) -> Optional[User]:
         """Obtém um usuário pelo ID."""
         try:
-            user_dict = await Database.database["users"].find_one({"_id": ObjectId(user_id)})
-            if not user_dict:
-                return None
-            return User.parse_obj(user_dict)
+            user_data = await Database.database["users"].find_one({"_id": ObjectId(user_id)})
+            if user_data:
+                # Garantir que o usuário tenha configurações de notificação
+                if "notification_settings" not in user_data:
+                    user_data["notification_settings"] = NotificationSettings().dict()
+                    await Database.database["users"].update_one(
+                        {"_id": ObjectId(user_id)},
+                        {"$set": {"notification_settings": user_data["notification_settings"]}}
+                    )
+                return User.parse_obj(user_data)
+            return None
         except Exception as e:
-            logger.error(f"Erro ao buscar usuário por ID: {str(e)}")
+            logger.error(f"Erro ao buscar usuário: {str(e)}")
             return None
     
     @staticmethod

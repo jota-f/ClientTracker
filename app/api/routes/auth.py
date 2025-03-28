@@ -12,6 +12,7 @@ from app.core.dependencies import get_current_user, get_optional_user
 from app.services.email_verification_service import EmailVerificationService
 from app.core.database import Database
 from pydantic import BaseModel
+from app.core.config import settings
 
 router = APIRouter(tags=["Autenticação"])
 logger = logging.getLogger(__name__)

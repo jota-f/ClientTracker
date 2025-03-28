@@ -28,7 +28,7 @@ class TaskComment(BaseModel):
         return v
     
     class Config:
-        allow_population_by_field_name = True
+        populate_by_name = True
 
 class Task(BaseModel):
     id: Optional[PyObjectId] = Field(alias='_id')
@@ -52,7 +52,7 @@ class Task(BaseModel):
         return v
     
     class Config:
-        allow_population_by_field_name = True
+        populate_by_name = True
         json_encoders = {
             datetime: lambda v: v.isoformat(),
             ObjectId: str
