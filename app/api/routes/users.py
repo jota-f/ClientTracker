@@ -10,6 +10,7 @@ from app.services.auth_service import AuthService
 from app.core.dependencies import get_current_user
 from app.models.notification_settings import NotificationSettings
 from app.core.database import Database
+from app.core.config import settings
 from pydantic import BaseModel
 
 router = APIRouter(tags=["Usuários"])
@@ -69,14 +70,15 @@ async def update_user_profile(
             detail=f"Erro ao atualizar usuário: {str(e)}"
         )
 
-@router.patch("/notification-settings", status_code=status.HTTP_200_OK)
-@router.patch("/notifications", status_code=status.HTTP_200_OK)  # Rota alternativa para teste
+@router.patch("/notifications", status_code=status.HTTP_200_OK)
+@router.patch("/notification-settings", status_code=status.HTTP_200_OK, include_in_schema=False, deprecated=True)  # Rota legada, mantida para compatibilidade
 async def update_notification_settings(
     update_data: NotificationUpdate,
     current_user: User = Depends(get_current_user)
 ) -> Dict[str, Any]:
     """
     Atualiza as configurações de notificação do usuário.
+    A rota /notification-settings está deprecada, use /notifications no lugar.
     """
     try:
         logger.info(f"[DEBUG - PATCH NOTIFICATION-SETTINGS] Endpoint chamado!")
