@@ -42,13 +42,27 @@ class AuthMiddleware(BaseHTTPMiddleware):
         try:
             path = request.url.path
             
-            # Lista de caminhos públicos (incluindo assets estáticos)
-            public_paths = ['/static/', '/api/auth/login', '/api/auth/register', '/login', '/register', 
-                          '/forgot-password', '/auth-debug', '/auth-test', '/favicon.ico',
-                          '/auth/verify-email/', '/auth/verification-success', '/auth/verification-error',
-                          '/auth/verification-pending', '/calendar/google/callback', '/health',
-                          '/api/auth/resend-verification', '/api/auth/verify-email', '/api/auth/forgot-password',
-                          '/reset-password']
+            # Lista de rotas públicas que não necessitam de autenticação
+            public_paths = [
+                "/api/auth/login",
+                "/api/auth/register",
+                "/api/auth/verify-email",
+                "/api/auth/reset-password",
+                "/api/auth/reset-password-confirm",
+                "/login",
+                "/register",
+                "/forgot-password",
+                "/auth-debug",
+                "/auth-test",
+                "/static",
+                "/health",
+                "/docs",
+                "/openapi.json",
+                "/auth/verification-success",
+                "/auth/verification-error",
+                "/auth/verification-pending",
+                "/landing"  # Adicionando landing como rota pública
+            ]
             
             # Se for um caminho público, ignora completamente a verificação
             if any(path.startswith(public_path) for public_path in public_paths):

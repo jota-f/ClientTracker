@@ -44,16 +44,19 @@
 - ✅ Sistema de agendamento e notificações implementado
 - ✅ Configurações de notificação personalizáveis
 
-## Sprint 5: Relatórios e UI/UX (1 semana)
+## Sprint 5: Relatórios e UI/UX (1 semana) ✅
 ### Tarefas
-- Desenvolver dashboard de indicadores
-- Implementar interface para revisão semanal
-- Refinar design e garantir responsividade
-- Realizar testes de usabilidade
+- ✅ Desenvolver dashboard de indicadores
+- ✅ Implementar interface para revisão semanal
+- ✅ Refinar design e garantir responsividade
+- ✅ Realizar testes de usabilidade
+- ✅ Criar landing page para divulgação do ClientTracker
+- ✅ Implementar a metodologia "15 minutos por semana"
 
 ### Entregáveis
-- Módulo de relatórios completo
-- Interface aprimorada e testada
+- ✅ Módulo de relatórios completo
+- ✅ Interface aprimorada e testada
+- ✅ Landing page com elementos de conversão
 
 ## Sprint 6: Segurança e Deployment (1 semana) 🔄
 ### Tarefas
