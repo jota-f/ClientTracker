@@ -270,6 +270,10 @@ async def login_page(request: Request):
 async def register_page(request: Request):
     return templates.TemplateResponse("register.html", {"request": request})
 
+@app.get("/landing")
+async def landing_page(request: Request):
+    return templates.TemplateResponse("landing.html", {"request": request})
+
 @app.get("/profile")
 async def profile_page(request: Request, current_user: User = Depends(get_current_user)):
     return templates.TemplateResponse("profile.html", {"request": request, "user": current_user})
