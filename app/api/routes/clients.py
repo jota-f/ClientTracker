@@ -6,7 +6,7 @@ from app.core.dependencies import get_current_user
 from typing import List
 from fastapi.templating import Jinja2Templates
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -30,22 +30,46 @@ async def create_client(client: Client, current_user: User = Depends(get_current
         client_dict["user_id"] = str(current_user.id)
         
         try:
+            # Verificar campos obrigatórios
+            required_fields = ["name", "company", "email", "phone", "status", "sales_potential"]
+            missing_fields = [field for field in required_fields if not client_dict.get(field)]
+            
+            if missing_fields:
+                logger.error(f"Campos obrigatórios ausentes: {', '.join(missing_fields)}")
+                raise ValueError(f"Campos obrigatórios ausentes: {', '.join(missing_fields)}")
+            
             # Validação completa dos campos
             client_obj = Client(**client_dict)
             
-            # Validação adicional
+            # Validação adicional para datas
+            now = datetime.now(timezone.utc)
+            
+            # Se last_contact não foi fornecido ou não tem timezone, use a data atual
             if not client_obj.last_contact:
-                raise ValueError("Data do último contato é obrigatória")
-                
-            if not client_obj.next_followup:
-                raise ValueError("Data do próximo follow-up é obrigatória")
-                
-            # Garantir que as datas têm timezone
-            if client_obj.last_contact.tzinfo is None:
+                logger.info("Data do último contato não fornecida, usando data atual")
+                client_obj.last_contact = now
+            elif client_obj.last_contact.tzinfo is None:
+                logger.info("Adicionando timezone UTC à data do último contato")
                 client_obj.last_contact = client_obj.last_contact.replace(tzinfo=timezone.utc)
                 
-            if client_obj.next_followup.tzinfo is None:
+            # Se next_followup não foi fornecido ou não tem timezone, use data atual + 7 dias
+            if not client_obj.next_followup:
+                logger.info("Data do próximo follow-up não fornecida, usando data atual + 7 dias")
+                client_obj.next_followup = now + timedelta(days=7)
+            elif client_obj.next_followup.tzinfo is None:
+                logger.info("Adicionando timezone UTC à data do próximo follow-up")
                 client_obj.next_followup = client_obj.next_followup.replace(tzinfo=timezone.utc)
+                
+            # Garantir que interaction_history e pending_tasks existem
+            if not client_obj.interaction_history:
+                client_obj.interaction_history = []
+                
+            if not client_obj.pending_tasks:
+                client_obj.pending_tasks = []
+                
+            # Logging detalhado dos campos para fins de depuração
+            logger.info(f"Cliente validado com sucesso: {client_obj.dict(exclude={'id'})}")
+            logger.info(f"last_contact: {client_obj.last_contact}, next_followup: {client_obj.next_followup}")
                 
         except Exception as validation_error:
             logger.error(f"Erro de validação Pydantic: {str(validation_error)}")
@@ -96,30 +120,62 @@ async def update_client(client_id: str, client: Client, current_user: User = Dep
         if existing_client.user_id and existing_client.user_id != str(current_user.id):
             raise HTTPException(status_code=403, detail="Acesso não autorizado a este cliente")
         
+        # Log detalhado dos dados recebidos
+        logger.info(f"Tentativa de atualização do cliente {client_id}: {client.dict(exclude={'id'})}")
+        
         # Garantir que o user_id seja mantido
         client_dict = client.dict()
         client_dict["user_id"] = str(current_user.id)
         
         try:
+            # Verificar campos obrigatórios
+            required_fields = ["name", "company", "email", "phone", "status", "sales_potential"]
+            missing_fields = [field for field in required_fields if not client_dict.get(field)]
+            
+            if missing_fields:
+                logger.error(f"Campos obrigatórios ausentes: {', '.join(missing_fields)}")
+                raise ValueError(f"Campos obrigatórios ausentes: {', '.join(missing_fields)}")
+            
             # Validação completa dos campos
             client_obj = Client(**client_dict)
             
-            # Validação adicional
+            # Validação adicional para datas
+            now = datetime.now(timezone.utc)
+            
+            # Manter as datas originais se não fornecidas
             if not client_obj.last_contact:
-                raise ValueError("Data do último contato é obrigatória")
-                
-            if not client_obj.next_followup:
-                raise ValueError("Data do próximo follow-up é obrigatória")
-                
-            # Garantir que as datas têm timezone
-            if client_obj.last_contact.tzinfo is None:
+                if existing_client.last_contact:
+                    client_obj.last_contact = existing_client.last_contact
+                else:
+                    logger.info("Data do último contato não fornecida, usando data atual")
+                    client_obj.last_contact = now
+            elif client_obj.last_contact.tzinfo is None:
+                logger.info("Adicionando timezone UTC à data do último contato")
                 client_obj.last_contact = client_obj.last_contact.replace(tzinfo=timezone.utc)
                 
-            if client_obj.next_followup.tzinfo is None:
+            if not client_obj.next_followup:
+                if existing_client.next_followup:
+                    client_obj.next_followup = existing_client.next_followup
+                else:
+                    logger.info("Data do próximo follow-up não fornecida, usando data atual + 7 dias")
+                    client_obj.next_followup = now + timedelta(days=7)
+            elif client_obj.next_followup.tzinfo is None:
+                logger.info("Adicionando timezone UTC à data do próximo follow-up")
                 client_obj.next_followup = client_obj.next_followup.replace(tzinfo=timezone.utc)
                 
+            # Manter o histórico de interações e tarefas pendentes existentes se não fornecidos
+            if not client_obj.interaction_history and existing_client.interaction_history:
+                client_obj.interaction_history = existing_client.interaction_history
+                
+            if not client_obj.pending_tasks and existing_client.pending_tasks:
+                client_obj.pending_tasks = existing_client.pending_tasks
+                
+            # Logging detalhado dos campos para fins de depuração
+            logger.info(f"Cliente validado com sucesso para atualização: {client_obj.dict(exclude={'id'})}")
+            logger.info(f"last_contact: {client_obj.last_contact}, next_followup: {client_obj.next_followup}")
+                
         except Exception as validation_error:
-            logger.error(f"Erro de validação Pydantic: {str(validation_error)}")
+            logger.error(f"Erro de validação Pydantic na atualização: {str(validation_error)}")
             # Incluir detalhes do erro para depuração
             error_detail = str(validation_error)
             # Incluir detalhes específicos se for um erro de validação Pydantic
@@ -132,6 +188,7 @@ async def update_client(client_id: str, client: Client, current_user: User = Dep
     except HTTPException:
         raise
     except ValueError as e:
+        logger.error(f"Erro de valor ao atualizar cliente: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error(f"Erro ao atualizar cliente: {str(e)}")

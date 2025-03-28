@@ -81,22 +81,41 @@ document.getElementById('clientForm').addEventListener('submit', async (e) => {
     const formData = new FormData(e.target);
     
     // Formatação correta das datas com timezone UTC
-    const nextFollowupDate = new Date(formData.get('next_followup'));
+    const nextFollowupDate = new Date(formData.get('next_followup') + 'T12:00:00Z'); // Adicionar hora para evitar problemas com timezone
     const lastContactDate = new Date();
     
     // Função para garantir formato ISO8601 com timezone Z (UTC)
     const formatDateUTC = (date) => {
         try {
+            if (!(date instanceof Date) || isNaN(date.getTime())) {
+                console.error('Data inválida:', date);
+                return new Date().toISOString(); // Fallback para data atual
+            }
+            
             // Garante que a data tenha timezone UTC
-            return new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString();
+            return date.toISOString();
         } catch (error) {
             console.error('Erro ao formatar data:', error);
             return new Date().toISOString(); // Fallback para data atual
         }
     };
     
+    // Validar datas antes de enviar
+    if (isNaN(nextFollowupDate.getTime())) {
+        alert('Data de próximo follow-up inválida. Por favor, verifique o formato.');
+        return;
+    }
+    
     // Obter o ID do cliente atual (se existir)
     const clientId = '{{ client.id if client else "" }}';
+    
+    // Obter token do localStorage para autorização
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+        alert('Você não está autenticado. Faça login novamente.');
+        window.location.href = '/login';
+        return;
+    }
     
     let data = {};
     
@@ -107,12 +126,12 @@ document.getElementById('clientForm').addEventListener('submit', async (e) => {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                    'Authorization': `Bearer ${token}`
                 }
             });
             
             if (!response.ok) {
-                throw new Error('Erro ao obter dados do cliente');
+                throw new Error(`Erro ao obter dados do cliente: ${response.status} ${response.statusText}`);
             }
             
             // Dados existentes que serão modificados
@@ -135,7 +154,7 @@ document.getElementById('clientForm').addEventListener('submit', async (e) => {
             
         } catch (error) {
             console.error('Erro ao obter cliente existente:', error);
-            alert('Erro ao obter dados do cliente. Tente novamente.');
+            alert('Erro ao obter dados do cliente: ' + error.message);
             return;
         }
     } else {
@@ -157,7 +176,7 @@ document.getElementById('clientForm').addEventListener('submit', async (e) => {
     console.log("Dados enviados para o servidor:", data);
 
     const method = clientId ? 'PUT' : 'POST';
-    const url = `/api/v1/clients${clientId ? '/' + clientId : ''}`;
+    const url = `/api/v1/clients${clientId ? '/' + clientId : '/'}`;
 
     try {
         const response = await fetch(url, {
@@ -165,7 +184,7 @@ document.getElementById('clientForm').addEventListener('submit', async (e) => {
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify(data)
         });
@@ -173,7 +192,7 @@ document.getElementById('clientForm').addEventListener('submit', async (e) => {
         if (!response.ok) {
             const errorData = await response.json();
             console.error('Erro detalhado:', errorData);
-            throw new Error(errorData.detail || 'Erro ao salvar cliente');
+            throw new Error(errorData.detail || `Erro ao salvar cliente: ${response.status} ${response.statusText}`);
         }
 
         const result = await response.json();

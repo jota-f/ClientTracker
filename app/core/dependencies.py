@@ -92,6 +92,11 @@ async def get_optional_user(token: Optional[str] = Depends(oauth2_scheme)) -> Op
         logger.info("Nenhum token fornecido para autenticação opcional")
         return None
         
+    # Verificar se token é uma string válida
+    if not isinstance(token, str):
+        logger.warning(f"Token recebido não é uma string válida: {type(token)}")
+        return None
+        
     try:
         logger.info("Tentando decodificar token para usuário opcional...")
         payload = AuthService.decode_token(token)

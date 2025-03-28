@@ -59,6 +59,11 @@ class AuthService:
                 logger.error("Token vazio recebido")
                 raise ValueError("Token vazio")
                 
+            # Verificar se token é um objeto de requisição em vez de uma string
+            if hasattr(token, '__class__') and not isinstance(token, str):
+                logger.error(f"Token recebido não é uma string, mas {type(token)}")
+                raise ValueError(f"Token inválido: tipo inesperado {type(token)}")
+                
             # Log token de forma segura (primeiros 20 caracteres)
             token_prefix = token[:20] + "..." if len(token) > 20 else "[token_protegido]"
             logger.info(f"Tentando decodificar token: {token_prefix}")
