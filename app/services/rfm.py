@@ -9,7 +9,7 @@ def calculate_rfm_score(last_contact: datetime, sales_potential: int, interactio
     - 15 dias a 1 mês = 4 pontos
     - 1-3 meses = 3 pontos
     - 3-6 meses = 2 pontos
-    - Mais de 6 meses = 1 ponto
+    - Mais de 6 meses = 0 ponto
     
     Potencial (P):
     - Alto (5) = 5 pontos
@@ -48,7 +48,7 @@ def calculate_rfm_score(last_contact: datetime, sales_potential: int, interactio
     elif months_since_contact <= 6:  # 3-6 meses
         recency_score = 2
     else:  # Mais de 6 meses
-        recency_score = 1
+        recency_score = 0
     
     # Score de potencial
     if sales_potential >= 5:  # Alto

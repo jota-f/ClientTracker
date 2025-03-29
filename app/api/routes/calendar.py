@@ -3,10 +3,13 @@ from typing import Dict, Any, Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query, status, Response, Request
 from pydantic import BaseModel, Field, validator
 from datetime import datetime, timezone
+import json
 
 from app.models.user import User, CalendarIntegrationType
 from app.services.calendar_service import CalendarService
 from app.core.dependencies import get_current_user
+from app.services.user_service import UserService
+from app.services.auth_service import AuthService
 
 # Configurar logging
 logger = logging.getLogger(__name__)
@@ -88,13 +91,46 @@ async def get_google_auth_url(current_user: User = Depends(get_current_user)):
 async def google_callback(code: str, state: str):
     """Processar callback do Google OAuth"""
     try:
+        logger.info(f"API: Iniciando callback do Google com estado: {state}")
         result = await CalendarService.handle_google_callback(code, state)
-        # Redirecionar para uma página de confirmação
+        
+        # Se foi bem-sucedido, vamos obter o token do usuário
+        if result.get("success"):
+            user_id = result.get("user_id")
+            logger.info(f"API: Integração bem-sucedida para usuário ID: {user_id}")
+            
+            user = await UserService.get_user_by_id(user_id)
+            if user:
+                # Gerar novo token JWT
+                access_token = AuthService.create_access_token(data={"sub": str(user.id)})
+                logger.info(f"API: Novo token JWT gerado para usuário: {user.email}")
+                
+                # Criar resposta com token nos cookies
+                response = Response(
+                    content=json.dumps({"success": True, "message": "Integração com Google Calendar concluída com sucesso!"}),
+                    media_type="application/json"
+                )
+                
+                # Define o cookie com max_age (1 semana)
+                response.set_cookie(
+                    key="Authorization", 
+                    value=f"Bearer {access_token}",
+                    httponly=True, 
+                    secure=True, 
+                    samesite="lax",
+                    max_age=604800,  # 7 dias em segundos
+                    path="/"
+                )
+                
+                return response
+        
+        # Resposta padrão se não precisar setar cookie
         return {"success": True, "message": "Integração com Google Calendar concluída com sucesso!"}
     except HTTPException as he:
-        raise he
+        logger.error(f"API: HTTPException no callback do Google: {he.detail}")
+        raise
     except Exception as e:
-        logger.error(f"Erro no callback do Google: {str(e)}")
+        logger.error(f"API: Erro no callback do Google: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Erro no callback: {str(e)}")
 
 @router.get("/outlook/auth", response_model=GoogleAuthResponse)

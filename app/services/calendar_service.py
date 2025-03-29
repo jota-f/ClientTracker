@@ -69,7 +69,23 @@ class CalendarService:
             logger.info(f"Iniciando handle_google_callback com código {code[:10]}... e estado {state}")
             
             try:
-                with open(f"tmp/{state}.json", "r") as f:
+                # Verificar se o arquivo de estado existe
+                state_file_path = f"tmp/{state}.json"
+                logger.info(f"Verificando arquivo de estado: {state_file_path}")
+                
+                if not os.path.exists(state_file_path):
+                    logger.error(f"Arquivo de estado não encontrado: {state_file_path}")
+                    # Listar arquivos no diretório tmp para debug
+                    try:
+                        tmp_files = os.listdir("tmp")
+                        logger.info(f"Arquivos em tmp/: {tmp_files}")
+                    except Exception as list_err:
+                        logger.error(f"Erro ao listar arquivos em tmp/: {str(list_err)}")
+                    
+                    raise HTTPException(status_code=400, detail="Estado inválido ou expirado")
+                
+                logger.info(f"Arquivo de estado encontrado, carregando dados")
+                with open(state_file_path, "r") as f:
                     state_data = json.load(f)
                 
                 user_id = state_data.get("user_id")
@@ -80,11 +96,18 @@ class CalendarService:
                 logger.info(f"Estado válido, user_id encontrado: {user_id}")
                 
                 # Remover o arquivo de estado após o uso
-                os.remove(f"tmp/{state}.json")
-                logger.info(f"Arquivo de estado removido: tmp/{state}.json")
+                try:
+                    os.remove(state_file_path)
+                    logger.info(f"Arquivo de estado removido: {state_file_path}")
+                except Exception as rm_err:
+                    logger.warning(f"Erro ao remover arquivo de estado: {str(rm_err)}")
+                
             except FileNotFoundError:
                 logger.error(f"Arquivo de estado não encontrado: tmp/{state}.json")
                 raise HTTPException(status_code=400, detail="Estado inválido ou expirado")
+            except json.JSONDecodeError as json_err:
+                logger.error(f"Erro ao decodificar JSON do arquivo de estado: {str(json_err)}")
+                raise HTTPException(status_code=400, detail="Arquivo de estado corrompido")
             
             # Trocar o código por tokens
             logger.info(f"Trocando código por tokens via API do Google")
@@ -102,22 +125,33 @@ class CalendarService:
                 response = await client.post(GOOGLE_TOKEN_URL, data=token_data)
                 
                 if response.status_code != 200:
-                    logger.error(f"Erro ao obter token Google: {response.text}")
-                    raise HTTPException(status_code=400, detail="Falha ao obter token do Google")
+                    logger.error(f"Erro ao obter token Google: Status {response.status_code}, Resposta: {response.text}")
+                    raise HTTPException(status_code=400, detail=f"Falha ao obter token do Google: {response.text}")
                 
                 token_info = response.json()
                 logger.info(f"Tokens obtidos com sucesso. Access token: {token_info.get('access_token')[:10]}...")
                 
+                # Verificar se os tokens necessários foram recebidos
+                if 'access_token' not in token_info:
+                    logger.error("Resposta do Google não contém access_token")
+                    raise HTTPException(status_code=400, detail="Resposta do Google inválida: access_token ausente")
+                    
+                if 'refresh_token' not in token_info:
+                    logger.warning("Resposta do Google não contém refresh_token - isso pode causar problemas futuros com renovação")
+                    
                 # Atualizar o usuário com as informações de integração
+                now = datetime.now(timezone.utc)
+                expires_in = token_info.get("expires_in", 3600)  # Padrão: 1 hora
+                
                 calendar_integration = CalendarIntegration(
                     type=CalendarIntegrationType.GOOGLE,
                     enabled=True,
                     auth_token=token_info.get("access_token"),
                     refresh_token=token_info.get("refresh_token"),
-                    expires_at=datetime.now(timezone.utc) + timedelta(seconds=token_info.get("expires_in", 3600))
+                    expires_at=now + timedelta(seconds=expires_in)
                 )
                 
-                logger.info(f"CalendarIntegration criado: {calendar_integration.dict()}")
+                logger.info(f"CalendarIntegration criado: tipo={calendar_integration.type}, enabled={calendar_integration.enabled}, auth_token={calendar_integration.auth_token is not None}, refresh_token={calendar_integration.refresh_token is not None}, expires_at={calendar_integration.expires_at}")
                 
                 try:
                     # Verifica se o usuário existe antes de atualizar
@@ -137,10 +171,16 @@ class CalendarService:
                         
                         # Verificar se a atualização foi efetivamente aplicada no banco
                         updated_user = await UserService.get_user_by_id(user_id)
-                        if updated_user and updated_user.calendar_integration.enabled:
-                            logger.info(f"Verificação de atualização: integração está ativa para {user_id}")
+                        if updated_user and updated_user.calendar_integration and updated_user.calendar_integration.enabled:
+                            logger.info(f"Verificação de atualização: integração está ativa para {user_id}, tipo={updated_user.calendar_integration.type}")
+                            logger.info(f"Detalhes da integração: auth_token={updated_user.calendar_integration.auth_token is not None}, refresh_token={updated_user.calendar_integration.refresh_token is not None}")
                         else:
-                            logger.warning(f"Verificação de atualização: integração NÃO está ativa para {user_id}")
+                            if not updated_user:
+                                logger.warning(f"Verificação de atualização: usuário não encontrado após atualização!")
+                            elif not updated_user.calendar_integration:
+                                logger.warning(f"Verificação de atualização: calendar_integration é None após atualização!")
+                            else:
+                                logger.warning(f"Verificação de atualização: integração NÃO está ativa para {user_id}, tipo={updated_user.calendar_integration.type}")
                             
                         return {"success": True, "user_id": user_id}
                     else:
@@ -149,7 +189,7 @@ class CalendarService:
                     
                 except Exception as e:
                     logger.error(f"Erro ao atualizar integração do calendário: {str(e)}")
-                    raise HTTPException(status_code=500, detail="Erro ao atualizar integração do calendário")
+                    raise HTTPException(status_code=500, detail=f"Erro ao atualizar integração do calendário: {str(e)}")
         except HTTPException as he:
             logger.error(f"HTTPException durante callback Google: {he.detail}")
             raise

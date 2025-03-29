@@ -6,8 +6,26 @@ document.addEventListener('DOMContentLoaded', function() {
         googleAuthButtons.forEach(button => {
             button.addEventListener('click', function(e) {
                 e.preventDefault();
-                // Use a URL correta para a autenticação
-                window.location.href = '/api/calendar/google/auth';
+                console.log('Iniciando autenticação com o Google Calendar');
+                // Use a URL correta para a autenticação (usando a rota web)
+                fetch('/calendar/connect/google')
+                    .then(response => {
+                        if (response.redirected) {
+                            console.log('Redirecionando para:', response.url);
+                            window.location.href = response.url;
+                        } else {
+                            return response.json().then(data => {
+                                console.log('Resposta:', data);
+                                if (data.auth_url) {
+                                    console.log('Redirecionando para URL de autenticação:', data.auth_url);
+                                    window.location.href = data.auth_url;
+                                }
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro ao iniciar autenticação:', error);
+                    });
             });
         });
     }

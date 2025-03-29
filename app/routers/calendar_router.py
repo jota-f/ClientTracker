@@ -42,22 +42,39 @@ async def google_callback(
 ):
     """Callback para autorização do Google Calendar"""
     try:
+        logger.info(f"Processando callback do Google Calendar com estado: {state}")
         result = await CalendarService.handle_google_callback(code, state)
         
         if not result.get("success"):
+            logger.error(f"Falha na integração: {result.get('error', 'Erro desconhecido')}")
             return RedirectResponse(url="/calendar/connect?error=Falha+na+integração+com+Google+Calendar", status_code=303)
         
         # Obter o token do usuário
-        user = await UserService.get_user_by_id(result["user_id"])
+        user_id = result["user_id"]
+        logger.info(f"Integração bem-sucedida para usuário ID: {user_id}")
+        
+        user = await UserService.get_user_by_id(user_id)
         if not user:
+            logger.error(f"Usuário não encontrado após callback: {user_id}")
             raise HTTPException(status_code=404, detail="Usuário não encontrado")
         
         # Gerar novo token JWT
         access_token = AuthService.create_access_token(data={"sub": str(user.id)})
+        logger.info(f"Novo token JWT gerado para usuário: {user.email}")
         
-        # Redirecionar com o token
+        # Redirecionar com o token configurado nos cookies
         response = RedirectResponse(url="/calendar?msg=Integração+com+Google+Calendar+concluída+com+sucesso", status_code=303)
-        response.set_cookie(key="Authorization", value=f"Bearer {access_token}", httponly=True, secure=True, samesite="strict")
+        # Define o cookie com max_age (1 semana), path e outras configurações
+        response.set_cookie(
+            key="Authorization", 
+            value=f"Bearer {access_token}",
+            httponly=True, 
+            secure=True, 
+            samesite="lax",
+            max_age=604800,  # 7 dias em segundos
+            path="/"
+        )
+        logger.info(f"Concluindo callback, redirecionando para /calendar com token nos cookies")
         return response
         
     except Exception as e:
@@ -198,10 +215,14 @@ async def connect_google_calendar(
 ):
     """Iniciar processo de conexão com Google Calendar"""
     try:
+        logger.info(f"Iniciando conexão com Google Calendar para usuário: {current_user.email}")
         auth_url = await CalendarService.get_google_auth_url(current_user.id)
-        return RedirectResponse(url=auth_url)
+        logger.info(f"URL de autenticação gerada: {auth_url[:60]}...")
+        
+        # Redirecionar diretamente para a URL de autenticação do Google
+        return RedirectResponse(url=auth_url, status_code=302)
     except Exception as e:
-        logger.error(f"Erro ao conectar Google Calendar: {str(e)}")
+        logger.error(f"Erro ao gerar URL de autenticação do Google Calendar: {str(e)}")
         return templates.TemplateResponse(
             "connect_calendar.html",
             {

@@ -59,7 +59,7 @@ class CalendarIntegrationType(str, Enum):
 class CalendarIntegration(BaseModel):
     type: CalendarIntegrationType = CalendarIntegrationType.NONE
     enabled: bool = False
-    access_token: Optional[str] = None
+    auth_token: Optional[str] = None
     refresh_token: Optional[str] = None
     expires_at: Optional[datetime] = None
 

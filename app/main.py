@@ -61,6 +61,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 "/auth/verification-success",
                 "/auth/verification-error",
                 "/auth/verification-pending",
+                "/calendar/google/callback",
                 "/landing"  # Adicionando landing como rota pública
             ]
             
@@ -497,29 +498,70 @@ async def auth_test_page(request: Request):
 async def google_callback_public(code: str, state: str, request: Request):
     """Rota pública para processar o callback do Google OAuth"""
     from app.services.calendar_service import CalendarService
+    from app.services.auth_service import AuthService
+    from app.services.user_service import UserService
+    
     try:
-        logger.info(f"[ROTA PÚBLICA] Callback do Google recebido na rota pública /calendar/google/callback")
-        logger.info(f"[ROTA PÚBLICA] Código: {code[:15]}...")
-        logger.info(f"[ROTA PÚBLICA] Estado: {state}")
-        logger.info(f"[ROTA PÚBLICA] Headers: {dict(request.headers)}")
+        logger.info(f"[CALLBACK GOOGLE] Iniciando processamento de callback")
+        logger.info(f"[CALLBACK GOOGLE] Código: {code[:10]}... (truncado para segurança)")
+        logger.info(f"[CALLBACK GOOGLE] Estado: {state}")
         
+        # Processar o callback para obter o ID do usuário e atualizar a integração
         result = await CalendarService.handle_google_callback(code, state)
-        logger.info(f"[ROTA PÚBLICA] Resultado do callback do Google: {result}")
+        logger.info(f"[CALLBACK GOOGLE] Resultado do processamento: {result}")
         
-        if result and result.get("success"):
-            # Redirecionar para a página de calendário com uma mensagem de sucesso
-            logger.info(f"[ROTA PÚBLICA] Redirecionando para /calendar após sucesso")
-            redirect_url = "/calendar?success=true"
-        else:
-            # Redirecionar com mensagem de erro
-            logger.warning(f"[ROTA PÚBLICA] Redirecionando para /calendar após falha")
-            redirect_url = "/calendar?error=true"
+        if result and result.get("success") and result.get("user_id"):
+            user_id = result.get("user_id")
+            logger.info(f"[CALLBACK GOOGLE] Obtendo usuário com ID: {user_id}")
             
-        return RedirectResponse(url=redirect_url, status_code=302)
+            # Obter o usuário
+            user = await UserService.get_user_by_id(user_id)
+            if not user:
+                logger.error(f"[CALLBACK GOOGLE] Usuário não encontrado: {user_id}")
+                return RedirectResponse(url="/calendar?error=usuario_nao_encontrado", status_code=302)
+            
+            # Gerar token JWT com informações completas
+            token_data = {
+                "sub": str(user.id),
+                "email": user.email,
+                "username": user.username,
+                "role": user.role
+            }
+            access_token = AuthService.create_access_token(data=token_data)
+            logger.info(f"[CALLBACK GOOGLE] Token gerado com sucesso: {access_token[:10]}...")
+
+            # Preparar redirecionamento com mensagem de sucesso
+            response = RedirectResponse(url="/calendar?success=true", status_code=302)
+            
+            # Configurar cookie com o token JWT
+            cookie_options = {
+                "key": "Authorization",
+                "value": f"Bearer {access_token}",
+                "httponly": True,
+                "secure": True,
+                "samesite": "lax",
+                "max_age": 604800,  # 7 dias em segundos
+                "path": "/"
+            }
+            response.set_cookie(**cookie_options)
+            logger.info(f"[CALLBACK GOOGLE] Cookie definido com opções: {cookie_options}")
+            
+            # Adicionar também como header para clientes JavaScript
+            response.headers["X-Auth-Token"] = access_token
+            
+            # Log de sucesso e retorno
+            logger.info(f"[CALLBACK GOOGLE] Processamento concluído com sucesso, redirecionando para /calendar")
+            return response
+        else:
+            # Falha no processamento
+            error_msg = result.get("error", "erro_desconhecido") if result else "falha_no_processamento"
+            logger.error(f"[CALLBACK GOOGLE] Falha no processamento: {error_msg}")
+            return RedirectResponse(url=f"/calendar?error={error_msg}", status_code=302)
+            
     except Exception as e:
-        logger.error(f"[ROTA PÚBLICA] Erro no callback do Google: {str(e)}")
-        # Em caso de erro, redirecionar para uma página de erro
-        return RedirectResponse(url="/calendar?error=true", status_code=302)
+        # Capturar qualquer exceção para evitar falhas silenciosas
+        logger.error(f"[CALLBACK GOOGLE] Erro durante processamento: {str(e)}", exc_info=True)
+        return RedirectResponse(url="/calendar?error=erro_inesperado", status_code=302)
 
 # Rotas de verificação de email
 @app.get("/auth/verify-email/{token}")
