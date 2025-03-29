@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Request, Depends
-from app.models.client import Client, Interaction
+from app.models.client import Client, ClientCreate, Interaction
 from app.services.client_service import ClientService
 from app.models.user import User
 from app.core.dependencies import get_current_user
@@ -21,9 +21,11 @@ async def get_clients(current_user: User = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail="Erro ao listar clientes")
 
 @router.post("/", response_model=Client)
-async def create_client(client: Client, current_user: User = Depends(get_current_user)):
+async def create_client(client: ClientCreate, current_user: User = Depends(get_current_user)):
     try:
-        logger.info(f"Tentativa de criação de cliente: {client.dict(exclude={'id'})}")
+        # Log mais detalhado do payload recebido
+        logger.info(f"ID do usuário atual: {current_user.id}")
+        logger.info(f"Tentativa de criação de cliente. Payload completo: {client.dict()}")
         
         # Definir o user_id do cliente como o ID do usuário atual
         client_dict = client.dict()
@@ -38,8 +40,61 @@ async def create_client(client: Client, current_user: User = Depends(get_current
                 logger.error(f"Campos obrigatórios ausentes: {', '.join(missing_fields)}")
                 raise ValueError(f"Campos obrigatórios ausentes: {', '.join(missing_fields)}")
             
+            # Log para debugar datas
+            logger.info(f"Datas recebidas - last_contact: {client_dict.get('last_contact')}, next_followup: {client_dict.get('next_followup')}")
+            logger.info(f"Tipo last_contact: {type(client_dict.get('last_contact'))}, Tipo next_followup: {type(client_dict.get('next_followup'))}")
+            
+            # Garantir que temos listas vazias para histórico e tarefas
+            if "interaction_history" not in client_dict or client_dict["interaction_history"] is None:
+                logger.info("Inicializando interaction_history vazio")
+                client_dict["interaction_history"] = []
+                
+            if "pending_tasks" not in client_dict or client_dict["pending_tasks"] is None:
+                logger.info("Inicializando pending_tasks vazio")
+                client_dict["pending_tasks"] = []
+                
             # Validação completa dos campos
-            client_obj = Client(**client_dict)
+            try:
+                # Tente criar o objeto diretamente com os dados existentes
+                client_obj = Client(**client_dict)
+                logger.info("Cliente validado com sucesso na primeira tentativa")
+            except Exception as validation_error:
+                # Log detalhado do erro
+                logger.error(f"Erro na primeira tentativa de validação: {str(validation_error)}")
+                if hasattr(validation_error, 'errors'):
+                    for error in validation_error.errors():
+                        logger.error(f"Campo: {error.get('loc', [])}, erro: {error.get('msg', '')}")
+                
+                # Se falhar, tente ajustar os dados e tentar novamente
+                # Validação adicional para datas
+                now = datetime.now(timezone.utc)
+                
+                # Se last_contact não foi fornecido ou não tem timezone, use a data atual
+                if not client_dict.get("last_contact"):
+                    logger.info("Data do último contato não fornecida, usando data atual")
+                    client_dict["last_contact"] = now
+                elif hasattr(client_dict["last_contact"], "tzinfo") and client_dict["last_contact"].tzinfo is None:
+                    logger.info("Adicionando timezone UTC à data do último contato")
+                    client_dict["last_contact"] = client_dict["last_contact"].replace(tzinfo=timezone.utc)
+                    
+                # Se next_followup não foi fornecido ou não tem timezone, use data atual + 7 dias
+                if not client_dict.get("next_followup"):
+                    logger.info("Data do próximo follow-up não fornecida, usando data atual + 7 dias")
+                    client_dict["next_followup"] = now + timedelta(days=7)
+                elif hasattr(client_dict["next_followup"], "tzinfo") and client_dict["next_followup"].tzinfo is None:
+                    logger.info("Adicionando timezone UTC à data do próximo follow-up")
+                    client_dict["next_followup"] = client_dict["next_followup"].replace(tzinfo=timezone.utc)
+                
+                # Tente novamente com os dados ajustados
+                try:
+                    client_obj = Client(**client_dict)
+                    logger.info("Cliente validado com sucesso após ajustes")
+                except Exception as second_validation_error:
+                    logger.error(f"Erro na segunda tentativa de validação: {str(second_validation_error)}")
+                    if hasattr(second_validation_error, 'errors'):
+                        for error in second_validation_error.errors():
+                            logger.error(f"Campo: {error.get('loc', [])}, erro: {error.get('msg', '')}")
+                    raise second_validation_error
             
             # Validação adicional para datas
             now = datetime.now(timezone.utc)
@@ -77,18 +132,27 @@ async def create_client(client: Client, current_user: User = Depends(get_current
             error_detail = str(validation_error)
             # Incluir detalhes específicos se for um erro de validação Pydantic
             if hasattr(validation_error, 'errors'):
-                error_detail = f"Erros de validação: {validation_error.errors()}"
-            raise HTTPException(status_code=422, detail=f"Erro de validação: {error_detail}")
+                errors = validation_error.errors()
+                logger.error(f"Detalhes dos erros de validação: {errors}")
+                error_detail = f"Erros de validação: {errors}"
+            raise HTTPException(status_code=422, detail=error_detail)
         
         # Tentar criar o cliente
-        return await ClientService.create_client(client_obj)
+        logger.info("Enviando dados para o ClientService para criação do cliente")
+        client_result = await ClientService.create_client(client_obj)
+        logger.info(f"Cliente criado com sucesso com ID {client_result.id}")
+        return client_result
     except ValueError as e:
         logger.error(f"Erro de valor ao criar cliente: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
-    except HTTPException:
-        raise
+    except HTTPException as he:
+        logger.error(f"HTTPException ao criar cliente: {he.detail}")
+        raise he
     except Exception as e:
         logger.error(f"Erro ao criar cliente: {str(e)}")
+        logger.error(f"Tipo da exceção: {type(e)}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Erro ao criar cliente: {str(e)}")
 
 @router.get("/{client_id}", response_model=Client)

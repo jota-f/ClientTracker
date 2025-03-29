@@ -10,6 +10,7 @@ from bson import ObjectId
 from app.models.user import User, UserCreate, UserResponse
 from app.core.database import Database
 from app.models.notification_settings import NotificationSettings, NotificationPreference
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -17,13 +18,13 @@ logger = logging.getLogger(__name__)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Configuração do JWT
-# Gera uma chave secreta de 32 bytes aleatórios se não estiver definida no ambiente
-SECRET_KEY = os.environ.get("SECRET_KEY", secrets.token_hex(32))
+# Usar a chave do arquivo .env em vez de gerar uma nova
+SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 horas
 
 # Log para garantir que estamos usando a mesma SECRET_KEY durante toda a execução
-logger.info(f"Usando SECRET_KEY: {'do ambiente' if 'SECRET_KEY' in os.environ else 'gerada automaticamente'}")
+logger.info(f"Usando SECRET_KEY do arquivo de configuração: {SECRET_KEY[:5]}...")
 
 class AuthService:
     @staticmethod

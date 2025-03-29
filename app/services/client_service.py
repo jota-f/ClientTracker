@@ -1,5 +1,5 @@
 from datetime import datetime, timezone, timedelta
-from app.models.client import Client, Interaction
+from app.models.client import Client, ClientCreate, Interaction
 from app.core.database import Database
 from app.services.rfm import calculate_rfm_score
 from app.services.contact_schedule_service import ContactScheduleService
@@ -77,11 +77,11 @@ class ClientService:
             return None
 
     @staticmethod
-    async def create_client(client: Client) -> Client:
+    async def create_client(client: ClientCreate) -> Client:
         try:
             logger.info("Tentando criar um novo cliente com os dados: %s", client.dict())
             
-            client_dict = client.dict(exclude={"id"}, by_alias=True)
+            client_dict = client.dict(by_alias=True)
             
             # Garantir que as datas são timezone-aware
             now = datetime.now(timezone.utc)

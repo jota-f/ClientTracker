@@ -25,7 +25,8 @@ class EmailVerificationMiddleware(BaseHTTPMiddleware):
             "/health",
             "/google/callback",
             "/calendar/google/callback",
-            "/debug/auth-token"
+            "/debug/auth-token",
+            "/landing"  # Adicionando landing à lista de caminhos isentos
         ]
         
         # Verifica se o caminho atual está na lista de isentos
@@ -44,7 +45,7 @@ class EmailVerificationMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
         
         try:
-            # Obter o usuário atual
+            # Passar a requisição diretamente para obter o usuário
             user = await get_optional_user(request)
             
             if user:

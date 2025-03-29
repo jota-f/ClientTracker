@@ -88,6 +88,24 @@ async def get_optional_user(token: Optional[str] = Depends(oauth2_scheme)) -> Op
     """
     logger.info("Tentando obter usuário opcional (sem contexto de requisição)")
     
+    # Se token for um objeto Request ou similar, tenta extrair o token do Authorization header
+    if hasattr(token, 'headers') and hasattr(token, 'cookies'):
+        request = token
+        logger.warning(f"Token recebido é um objeto Request. Tentando extrair token dos headers.")
+        
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Bearer '):
+            token = auth_header.replace('Bearer ', '')
+            logger.info(f"Token extraído do header: {token[:10]}..." if len(token) > 10 else token)
+        else:
+            # Tenta extrair o token dos cookies se não estiver nos headers
+            token = request.cookies.get('access_token')
+            if token:
+                logger.info(f"Token extraído dos cookies: {token[:10]}..." if len(token) > 10 else token)
+            else:
+                logger.info("Nenhum token encontrado em headers ou cookies")
+                return None
+    
     if not token:
         logger.info("Nenhum token fornecido para autenticação opcional")
         return None
