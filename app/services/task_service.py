@@ -129,17 +129,32 @@ class TaskService:
         try:
             db = await get_db()
             
-            # Criar consulta
-            query = {"_id": ObjectId(task_id)}
+            # Primeiro, busca a tarefa apenas pelo ID
+            any_task = await db[TaskService.COLLECTION].find_one({"_id": ObjectId(task_id)})
+            if not any_task:
+                logger.warning(f"Tarefa não encontrada: {task_id}")
+                return None
             
-            # Se user_id for fornecido, verificar propriedade
-            if user_id:
-                query["user_id"] = user_id
-                logger.info(f"Buscando tarefa {task_id} com verificação de usuário {user_id}")
+            # Se a tarefa não tem proprietário (user_id é None ou vazio), qualquer usuário pode acessá-la
+            if any_task.get("user_id") is None or any_task.get("user_id") == "":
+                logger.info(f"Tarefa {task_id} não tem proprietário, permitindo acesso pelo usuário {user_id}")
+                task_data = any_task
             else:
-                logger.info(f"Buscando tarefa {task_id} sem verificação de usuário")
+                # Criar consulta para verificar propriedade
+                query = {"_id": ObjectId(task_id)}
                 
-            task_data = await db[TaskService.COLLECTION].find_one(query)
+                # Se user_id for fornecido, verificar propriedade
+                if user_id:
+                    query["user_id"] = user_id
+                    logger.info(f"Buscando tarefa {task_id} com verificação de usuário {user_id}")
+                else:
+                    logger.info(f"Buscando tarefa {task_id} sem verificação de usuário")
+                    
+                task_data = await db[TaskService.COLLECTION].find_one(query)
+                if not task_data and user_id:
+                    logger.warning(f"Tarefa {task_id} existe mas pertence ao usuário {any_task.get('user_id')}, não ao usuário {user_id}")
+                    return None
+            
             if task_data:
                 # Verificar se tem client_id mas não tem client_name
                 if task_data.get("client_id") and (not task_data.get("client_name") or task_data.get("client_name") is None):
@@ -159,21 +174,13 @@ class TaskService:
                 
                 return Task.parse_obj(task_data)
             
-            # Se user_id foi fornecido e não encontrou, verificar se a tarefa existe mas é de outro usuário
-            if user_id:
-                task_any_user = await db[TaskService.COLLECTION].find_one({"_id": ObjectId(task_id)})
-                if task_any_user:
-                    logger.warning(f"Tarefa {task_id} existe mas pertence ao usuário {task_any_user.get('user_id')}, não ao usuário {user_id}")
-                    return None
-            
-            logger.warning(f"Tarefa não encontrada: {task_id}")
             return None
         except Exception as e:
             logger.error(f"Erro ao buscar tarefa: {e}")
             return None
 
     @staticmethod
-    async def update_task(task_id: str, update_data: Dict[str, Any], user_id: str = None) -> Optional[Task]:
+    async def update_task(task_id: str, update_data: Dict[str, Any], user_id: str = None, allow_status_update: bool = True) -> Optional[Task]:
         """
         Atualiza uma tarefa existente.
         
@@ -181,47 +188,127 @@ class TaskService:
             task_id: ID da tarefa a ser atualizada
             update_data: Dados para atualizar
             user_id: Se fornecido, verifica se a tarefa pertence a este usuário
+            allow_status_update: Se True, permite atualizar o status mesmo que a tarefa pertença a outro usuário
         """
         try:
             db = await get_db()
             
-            # Primeiro, verifica se a tarefa existe e se pertence ao usuário correto
-            # Criar consulta para verificar propriedade
-            query = {"_id": ObjectId(task_id)}
-            if user_id:
-                query["user_id"] = user_id
-                logger.info(f"Verificando propriedade da tarefa {task_id} para usuário {user_id}")
+            # Log detalhado para diagnóstico
+            logger.info(f"Tentativa de atualização da tarefa {task_id}")
+            logger.info(f"User ID fornecido: {user_id}")
+            logger.info(f"Dados para atualização: {update_data}")
             
-            # Verifica se a tarefa existe e pertence ao usuário
-            existing_task = await db[TaskService.COLLECTION].find_one(query)
-            if not existing_task:
-                if user_id:
-                    # Verifica se a tarefa existe, mas pertence a outro usuário
-                    any_task = await db[TaskService.COLLECTION].find_one({"_id": ObjectId(task_id)})
-                    if any_task:
-                        logger.warning(f"Tentativa de atualizar tarefa {task_id} de outro usuário. Proprietário: {any_task.get('user_id')}, Solicitante: {user_id}")
-                        return None
-                
-                logger.warning(f"Tarefa {task_id} não encontrada para atualização")
+            # Primeiro, verifica se a tarefa existe
+            any_task = await db[TaskService.COLLECTION].find_one({"_id": ObjectId(task_id)})
+            if not any_task:
+                logger.warning(f"Tarefa {task_id} não existe no banco de dados")
                 return None
+            
+            # Verificar se esta é apenas uma atualização de status para DONE
+            is_status_update_only = (
+                len(update_data) == 1 and 
+                "status" in update_data and 
+                update_data["status"] == TaskStatus.DONE and
+                allow_status_update
+            )
+            
+            # Verificar se a tarefa já está com status DONE
+            is_task_already_done = any_task.get("status") == TaskStatus.DONE
+                
+            # Se a tarefa já está DONE ou se for apenas atualização de status, não verifica propriedade
+            if is_status_update_only or (is_task_already_done and allow_status_update):
+                if is_task_already_done:
+                    logger.info(f"Permitindo edição da tarefa {task_id} que já está concluída, mesmo que não seja o proprietário")
+                else:
+                    logger.info(f"Permitindo atualização de status para DONE na tarefa {task_id}, mesmo que não seja o proprietário")
+                    
+                existing_task = any_task
+            # Verificar se a tarefa não tem proprietário (user_id é None ou vazio)
+            elif any_task.get("user_id") is None or any_task.get("user_id") == "":
+                logger.info(f"Tarefa {task_id} não tem proprietário, permitindo edição pelo usuário {user_id}")
+                existing_task = any_task
+            else:
+                # Criar consulta para verificar propriedade
+                query = {"_id": ObjectId(task_id)}
+                if user_id:
+                    query["user_id"] = user_id
+                    logger.info(f"Verificando propriedade da tarefa {task_id} para usuário {user_id}")
+                
+                # Verifica se a tarefa existe e pertence ao usuário
+                existing_task = await db[TaskService.COLLECTION].find_one(query)
+                
+                if not existing_task:
+                    if user_id:
+                        owner_id = any_task.get("user_id")
+                        logger.warning(f"Tentativa de atualizar tarefa {task_id} de outro usuário. Proprietário: {owner_id}, Solicitante: {user_id}")
+                        logger.warning(f"Tarefa encontrada: {any_task}")
+                        return None
+                    else:
+                        logger.warning(f"Tarefa {task_id} não encontrada e nenhum user_id fornecido")
+                    
+                    logger.warning(f"Tarefa {task_id} não encontrada para atualização")
+                    return None
+                else:
+                    logger.info(f"Tarefa {task_id} encontrada para o usuário {user_id}")
+            
+            # Verificar se o status está sendo alterado para "DONE" e a tarefa tem client_id
+            creating_interaction = (
+                "status" in update_data and 
+                update_data["status"] == TaskStatus.DONE and 
+                existing_task.get("status") != TaskStatus.DONE and
+                existing_task.get("client_id")
+            )
             
             # Se houver um client_id, verifica se o cliente existe e atualiza o client_name
             if update_data.get("client_id"):
-                client = await ClientService.get_client_by_id(update_data["client_id"])
-                if client:
-                    update_data["client_name"] = client.name
+                try:
+                    # Importando aqui para evitar o erro de escopo da variável
+                    from app.services.client_service import ClientService
+                    client = await ClientService.get_client_by_id(update_data["client_id"])
+                    if client:
+                        update_data["client_name"] = client.name
+                except Exception as e:
+                    logger.error(f"Erro ao obter informações do cliente: {e}")
+                    # Continua o fluxo mesmo com erro no cliente
             
             # Atualiza o timestamp
             update_data["updated_at"] = datetime.now(timezone.utc)
             
+            # Se a tarefa não tinha user_id e agora estamos atualizando, definir o user_id
+            if (any_task.get("user_id") is None or any_task.get("user_id") == "") and user_id and "user_id" not in update_data:
+                update_data["user_id"] = user_id
+                logger.info(f"Definindo user_id da tarefa {task_id} para {user_id}")
+            
             # Atualiza a tarefa no banco de dados
             await db[TaskService.COLLECTION].update_one(
-                query,  # Usa a mesma query que verificou a propriedade
+                {"_id": ObjectId(task_id)},  # Usa apenas o ID, não verifica propriedade aqui
                 {"$set": update_data}
             )
             
-            # Retorna a tarefa atualizada, mantendo a verificação de propriedade
-            return await TaskService.get_task_by_id(task_id, user_id)
+            # Obter a tarefa atualizada
+            updated_task = await TaskService.get_task_by_id(task_id) if is_status_update_only else await TaskService.get_task_by_id(task_id, user_id)
+            
+            # Se a tarefa foi atualizada para DONE e tem um cliente associado, adicionar interação
+            if updated_task and creating_interaction:
+                try:
+                    from app.models.client import Interaction
+                    from app.services.client_service import ClientService
+                    
+                    # Criar interação baseada na tarefa concluída
+                    interaction = Interaction(
+                        type="TAREFA_CONCLUÍDA",
+                        notes=f"Tarefa concluída: {existing_task.get('title', 'Sem título')}",
+                        outcome="Tarefa marcada como concluída no sistema"
+                    )
+                    
+                    # Adicionar interação ao cliente
+                    await ClientService.add_interaction(existing_task.get("client_id"), interaction)
+                    logger.info(f"Interação adicionada automaticamente ao cliente {existing_task.get('client_id')} pela conclusão da tarefa {task_id}")
+                except Exception as e:
+                    logger.error(f"Erro ao adicionar interação automática: {e}")
+                    # Não retornar erro para não interromper o fluxo principal
+            
+            return updated_task
         except Exception as e:
             logger.error(f"Erro ao atualizar tarefa: {e}")
             return None
@@ -237,6 +324,20 @@ class TaskService:
         """
         try:
             db = await get_db()
+            
+            # Primeiro verifica se a tarefa existe
+            any_task = await db[TaskService.COLLECTION].find_one({"_id": ObjectId(task_id)})
+            if not any_task:
+                logger.warning(f"Tarefa {task_id} não existe no banco de dados")
+                return False
+                
+            # Verificar se a tarefa não tem proprietário (user_id é None ou vazio)
+            if any_task.get("user_id") is None or any_task.get("user_id") == "":
+                logger.info(f"Tarefa {task_id} não tem proprietário, permitindo exclusão pelo usuário {user_id}")
+                
+                # Excluir tarefa diretamente
+                result = await db[TaskService.COLLECTION].delete_one({"_id": ObjectId(task_id)})
+                return result.deleted_count > 0
             
             # Criar consulta para verificar propriedade
             query = {"_id": ObjectId(task_id)}
@@ -484,10 +585,13 @@ class TaskService:
         """
         try:
             # Usar o método update_task com verificação de usuário
+            # Isso já vai cuidar de adicionar a interação se necessário
+            # Permitir atualização de status mesmo se não for o proprietário da tarefa
             return await TaskService.update_task(
                 task_id, 
                 {"status": new_status}, 
-                user_id=user_id
+                user_id=user_id,
+                allow_status_update=True
             )
         except Exception as e:
             logger.error(f"Erro ao atualizar status da tarefa: {e}")

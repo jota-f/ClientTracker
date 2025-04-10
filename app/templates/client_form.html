@@ -122,6 +122,21 @@ document.getElementById('clientForm').addEventListener('submit', async (e) => {
     // Obter o ID do cliente atual (se existir)
     const clientId = '{{ client.id if client else "" }}';
     
+    // Log detalhado para depuração
+    console.log("Formulário em modo:", clientId ? "edição" : "criação");
+    console.log("ID do cliente:", clientId ? clientId : "nenhum (novo cliente)");
+    
+    // Verificações adicionais para garantir que temos um ID válido
+    const isValidId = clientId && clientId.trim() !== '' && 
+                      !['none', 'null', 'undefined'].includes(clientId.toLowerCase());
+                      
+    if (clientId && !isValidId) {
+        console.error('ID do cliente inválido:', clientId);
+        alert('Erro: ID do cliente inválido. Você será redirecionado para a lista de clientes.');
+        window.location.href = '/clients';
+        return;
+    }
+    
     // Obter token do localStorage para autorização
     const token = localStorage.getItem('access_token');
     if (!token) {
@@ -173,7 +188,6 @@ document.getElementById('clientForm').addEventListener('submit', async (e) => {
     } else {
         // Se estiver criando um novo cliente
         data = {
-            _id: null,  // Adicionando _id explicitamente como null
             name: formData.get('name'),
             company: formData.get('company'),
             email: formData.get('email'),
@@ -227,8 +241,11 @@ document.getElementById('clientForm').addEventListener('submit', async (e) => {
     console.log("- interaction_history:", typeof data.interaction_history, Array.isArray(data.interaction_history));
     console.log("- pending_tasks:", typeof data.pending_tasks, Array.isArray(data.pending_tasks));
 
-    const method = clientId ? 'PUT' : 'POST';
-    const url = `/api/v1/clients${clientId ? '/' + clientId : '/'}`;
+    const method = isValidId ? 'PUT' : 'POST';
+    const url = isValidId ? `/api/v1/clients/${clientId}` : '/api/v1/clients/';
+    
+    console.log("Método HTTP:", method);
+    console.log("URL da requisição:", url);
 
     try {
         const response = await fetch(url, {
@@ -249,7 +266,16 @@ document.getElementById('clientForm').addEventListener('submit', async (e) => {
 
         const result = await response.json();
         console.log("Cliente salvo com sucesso:", result);
-        window.location.href = '/clients';
+        
+        // Verificar se temos um ID válido antes de redirecionar para edição
+        if (method === 'POST' && result && result._id) {
+            console.log("Cliente criado com ID:", result._id);
+            // Redirecionar para a lista de clientes em vez de tentar editar imediatamente
+            window.location.href = '/clients';
+        } else {
+            // Se for uma edição (PUT) ou não tiver ID válido, ir para a lista
+            window.location.href = '/clients';
+        }
     } catch (error) {
         console.error('Error:', error);
         alert(error.message || 'Erro ao salvar cliente. Verifique se todos os campos foram preenchidos corretamente.');

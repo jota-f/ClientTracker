@@ -29,6 +29,12 @@ async def create_client(client: ClientCreate, current_user: User = Depends(get_c
         
         # Definir o user_id do cliente como o ID do usuário atual
         client_dict = client.dict()
+        
+        # Remover campo _id se existir para garantir que o MongoDB gere automaticamente
+        if "_id" in client_dict:
+            logger.warning(f"Campo _id encontrado no payload e será removido: {client_dict['_id']}")
+            client_dict.pop("_id")
+        
         client_dict["user_id"] = str(current_user.id)
         
         try:
@@ -158,12 +164,19 @@ async def create_client(client: ClientCreate, current_user: User = Depends(get_c
 @router.get("/{client_id}", response_model=Client)
 async def get_client(client_id: str, current_user: User = Depends(get_current_user)):
     try:
+        # Validar o ID do cliente
+        if not client_id or client_id.lower() in ('none', 'null', 'undefined', ''):
+            logger.error(f"Tentativa de acessar cliente com ID inválido: {client_id}")
+            raise HTTPException(status_code=404, detail="Cliente não encontrado")
+            
         client = await ClientService.get_client_by_id(client_id)
         if not client:
+            logger.error(f"Cliente não encontrado com ID: {client_id}")
             raise HTTPException(status_code=404, detail="Cliente não encontrado")
         
         # Verificar se o cliente pertence ao usuário atual
         if client.user_id and client.user_id != str(current_user.id):
+            logger.warning(f"Tentativa de acesso não autorizado ao cliente {client_id} pelo usuário {current_user.id}")
             raise HTTPException(status_code=403, detail="Acesso não autorizado a este cliente")
             
         return client

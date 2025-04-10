@@ -1,0 +1,494 @@
+2025-04-10 15:40:03,205 - app.main - INFO - Registrando router de users. Router válido: True
+2025-04-10 15:40:03,205 - app.main - INFO - Rotas no router de users: ['/update', '/notification-settings', '/notifications']
+INFO:     Started server process [15704]
+INFO:     Waiting for application startup.
+2025-04-10 15:40:03,234 - app.main - INFO - Starting up...
+2025-04-10 15:40:03,235 - app.core.database - INFO - Connecting to MongoDB...
+2025-04-10 15:40:04,573 - app.core.database - INFO - Connected to MongoDB. Database: 
+2025-04-10 15:40:04,696 - app.core.database - INFO - Nenhum cliente com _id null encontrado.
+2025-04-10 15:40:04,696 - app.main - INFO - Verificação e correção de clientes com ID nulo concluída
+2025-04-10 15:40:04,824 - app.services.user_service - INFO - Configurações de notificação atualizadas para 0 usuários
+2025-04-10 15:40:04,824 - app.services.client_service - INFO - Iniciando verificação de timezone nas datas dos clientes
+2025-04-10 15:40:05,069 - app.services.client_service - INFO - Atualização de timezone concluída. 1 clientes atualizados
+2025-04-10 15:40:05,069 - app.main - INFO - Timezone atualizado para 1 clientes
+2025-04-10 15:40:05,071 - apscheduler.scheduler - INFO - Scheduler started
+2025-04-10 15:40:05,071 - app.services.scheduler_service - INFO - Scheduler iniciado com sucesso
+2025-04-10 15:40:05,071 - app.main - INFO - Aplicação iniciada com sucesso
+2025-04-10 15:40:05,071 - app.jobs.notification_job - INFO - Iniciando processamento de notificações
+2025-04-10 15:40:05,071 - app.services.notification_service - INFO - Inicializando NotificationService com:
+2025-04-10 15:40:05,071 - app.services.notification_service - INFO - - SMTP Server: smtp.gmail.com
+2025-04-10 15:40:05,071 - app.services.notification_service - INFO - - SMTP Port: 587
+2025-04-10 15:40:05,071 - app.services.notification_service - INFO - - Sender: pgswifi@gmail.com
+2025-04-10 15:40:05,071 - app.services.notification_service - INFO - - Password: ********
+2025-04-10 15:40:05,071 - app.services.notification_service - INFO - - TLS: True
+INFO:     Application startup complete.
+INFO:     Uvicorn running on https://0.0.0.0:8000 (Press CTRL+C to quit)
+2025-04-10 15:40:05,438 - app.services.notification_service - INFO - Verificando clientes com contatos agendados para os próximos 3 dias
+2025-04-10 15:40:05,806 - app.services.notification_service - INFO - Verificação de acompanhamentos concluída. Processados: 0, Lembretes enviados: 0, Erros: 0
+2025-04-10 15:40:06,173 - app.services.notification_service - INFO - Processamento de notificações concluído: {'success': True, 'rfm_reminders': {'processed': 1, 'sent': 0, 'errors': []}, 'followup_reminders': {'processed': 0, 'sent': 0, 'errors': []}, 'task_reminders': {'processed': 0, 'sent': 0, 'errors': []}}
+2025-04-10 15:40:06,173 - app.jobs.notification_job - INFO - Resultados do processamento de notificações:
+2025-04-10 15:40:06,173 - app.jobs.notification_job - INFO - RFM: 0/1 enviados
+2025-04-10 15:40:06,173 - app.jobs.notification_job - INFO - Follow-ups: 0/0 enviados
+2025-04-10 15:40:06,173 - app.jobs.notification_job - INFO - Tarefas: 0/0 enviados
+2025-04-10 15:40:40,181 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:40:40,181 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'exp': 1744385423}
+2025-04-10 15:40:40,182 - app.middleware.email_verification - INFO - Verificando acesso ao caminho: /tasks
+2025-04-10 15:40:40,182 - app.core.dependencies - INFO - Tentando obter usuário opcional (sem contexto de requisição)
+2025-04-10 15:40:40,182 - app.core.dependencies - WARNING - Token recebido é um objeto Request. Tentando extrair token dos headers.
+2025-04-10 15:40:40,182 - app.core.dependencies - INFO - Token extraído do header: eyJhbGciOi...
+2025-04-10 15:40:40,182 - app.core.dependencies - INFO - Tentando decodificar token para usuário opcional...
+2025-04-10 15:40:40,182 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:40:40,182 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'exp': 1744385423}
+2025-04-10 15:40:40,182 - app.services.auth_service - INFO - Buscando usuário com ID (formato original): '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:40:40,183 - app.services.auth_service - INFO - ObjectId válido criado: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:40,305 - app.services.auth_service - INFO - Usuário encontrado: jordano.f@gmail.com, ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:40,305 - app.services.auth_service - INFO - ObjectId convertido para string: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:40,305 - app.core.dependencies - INFO - Usuário opcional autenticado: jordano.f@gmail.com
+2025-04-10 15:40:40,306 - app.middleware.email_verification - INFO - Usuário autenticado: jordano.f@gmail.com, verificado: True
+2025-04-10 15:40:40,306 - app.middleware.email_verification - INFO - Usuário verificado, permitindo acesso: jordano.f@gmail.com
+2025-04-10 15:40:40,306 - app.core.dependencies - INFO - Verificando autenticação (sem contexto de requisição)
+2025-04-10 15:40:40,306 - app.core.dependencies - INFO - Tentando decodificar token...
+2025-04-10 15:40:40,306 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:40:40,306 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'exp': 1744385423}
+2025-04-10 15:40:40,307 - app.core.dependencies - INFO - Token decodificado com sucesso para usuário ID: '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:40:40,307 - app.core.dependencies - INFO - Buscando usuário com ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:40,307 - app.services.auth_service - INFO - Buscando usuário com ID (formato original): '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:40:40,307 - app.services.auth_service - INFO - ObjectId válido criado: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:40,429 - app.services.auth_service - INFO - Usuário encontrado: jordano.f@gmail.com, ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:40,429 - app.services.auth_service - INFO - ObjectId convertido para string: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:40,429 - app.core.dependencies - INFO - Usuário autenticado com sucesso: jordano.f@gmail.com
+2025-04-10 15:40:40,429 - app.services.task_service - INFO - Filtrando tarefas por user_id: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:40,429 - app.services.task_service - INFO - Executando consulta de tarefas com filtro: {'user_id': '67f7cb2aceaea56f0e1bb65c'}
+2025-04-10 15:40:40,552 - app.services.task_service - INFO - Recuperadas 3 tarefas do MongoDB
+INFO:     189.18.182.3:55095 - "GET /tasks?_=m9biur5l HTTP/1.1" 200 OK
+2025-04-10 15:40:41,221 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:40:41,221 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'email': 'jordano.f@gmail.com', 'username': 'jordano.f@gmail.com', 'role': 'user', 'exp': 1744385821}
+2025-04-10 15:40:41,221 - app.middleware.email_verification - INFO - Verificando acesso ao caminho: /api/auth/check
+2025-04-10 15:40:41,221 - app.middleware.email_verification - INFO - Caminho isento de verificação: /api/auth/check
+2025-04-10 15:40:41,222 - app.core.dependencies - INFO - Tentando obter usuário opcional (sem contexto de requisição)
+2025-04-10 15:40:41,222 - app.core.dependencies - INFO - Tentando decodificar token para usuário opcional...
+2025-04-10 15:40:41,222 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:40:41,222 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'email': 'jordano.f@gmail.com', 'username': 'jordano.f@gmail.com', 'role': 'user', 'exp': 1744385821}
+2025-04-10 15:40:41,222 - app.services.auth_service - INFO - Buscando usuário com ID (formato original): '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:40:41,222 - app.services.auth_service - INFO - ObjectId válido criado: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:41,345 - app.services.auth_service - INFO - Usuário encontrado: jordano.f@gmail.com, ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:41,345 - app.services.auth_service - INFO - ObjectId convertido para string: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:41,345 - app.core.dependencies - INFO - Usuário opcional autenticado: jordano.f@gmail.com
+INFO:     189.18.182.3:55095 - "GET /api/auth/check HTTP/1.1" 200 OK
+2025-04-10 15:40:42,136 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:40:42,136 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'exp': 1744385423}
+2025-04-10 15:40:42,137 - app.middleware.email_verification - INFO - Verificando acesso ao caminho: /tasks/67f7deb5555a063bccc558c4
+2025-04-10 15:40:42,137 - app.core.dependencies - INFO - Tentando obter usuário opcional (sem contexto de requisição)
+2025-04-10 15:40:42,137 - app.core.dependencies - WARNING - Token recebido é um objeto Request. Tentando extrair token dos headers.
+2025-04-10 15:40:42,137 - app.core.dependencies - INFO - Token extraído do header: eyJhbGciOi...
+2025-04-10 15:40:42,137 - app.core.dependencies - INFO - Tentando decodificar token para usuário opcional...
+2025-04-10 15:40:42,137 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:40:42,137 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'exp': 1744385423}
+2025-04-10 15:40:42,137 - app.services.auth_service - INFO - Buscando usuário com ID (formato original): '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:40:42,137 - app.services.auth_service - INFO - ObjectId válido criado: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:42,260 - app.services.auth_service - INFO - Usuário encontrado: jordano.f@gmail.com, ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:42,260 - app.services.auth_service - INFO - ObjectId convertido para string: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:42,260 - app.core.dependencies - INFO - Usuário opcional autenticado: jordano.f@gmail.com
+2025-04-10 15:40:42,260 - app.middleware.email_verification - INFO - Usuário autenticado: jordano.f@gmail.com, verificado: True
+2025-04-10 15:40:42,260 - app.middleware.email_verification - INFO - Usuário verificado, permitindo acesso: jordano.f@gmail.com
+2025-04-10 15:40:42,261 - app.core.dependencies - INFO - Verificando autenticação (sem contexto de requisição)
+2025-04-10 15:40:42,261 - app.core.dependencies - INFO - Tentando decodificar token...
+2025-04-10 15:40:42,261 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:40:42,261 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'exp': 1744385423}
+2025-04-10 15:40:42,261 - app.core.dependencies - INFO - Token decodificado com sucesso para usuário ID: '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:40:42,261 - app.core.dependencies - INFO - Buscando usuário com ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:42,261 - app.services.auth_service - INFO - Buscando usuário com ID (formato original): '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:40:42,261 - app.services.auth_service - INFO - ObjectId válido criado: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:42,383 - app.services.auth_service - INFO - Usuário encontrado: jordano.f@gmail.com, ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:42,383 - app.services.auth_service - INFO - ObjectId convertido para string: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:42,384 - app.core.dependencies - INFO - Usuário autenticado com sucesso: jordano.f@gmail.com
+2025-04-10 15:40:42,384 - app.services.task_service - INFO - Buscando tarefa 67f7deb5555a063bccc558c4 com verificação de usuário 67f7cb2aceaea56f0e1bb65c
+INFO:     189.18.182.3:55095 - "GET /tasks/67f7deb5555a063bccc558c4?_=m9biyxht HTTP/1.1" 200 OK
+2025-04-10 15:40:43,013 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:40:43,014 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'email': 'jordano.f@gmail.com', 'username': 'jordano.f@gmail.com', 'role': 'user', 'exp': 1744385821}
+2025-04-10 15:40:43,014 - app.middleware.email_verification - INFO - Verificando acesso ao caminho: /api/auth/check
+2025-04-10 15:40:43,014 - app.middleware.email_verification - INFO - Caminho isento de verificação: /api/auth/check
+2025-04-10 15:40:43,014 - app.core.dependencies - INFO - Tentando obter usuário opcional (sem contexto de requisição)
+2025-04-10 15:40:43,014 - app.core.dependencies - INFO - Tentando decodificar token para usuário opcional...
+2025-04-10 15:40:43,014 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:40:43,015 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'email': 'jordano.f@gmail.com', 'username': 'jordano.f@gmail.com', 'role': 'user', 'exp': 1744385821}
+2025-04-10 15:40:43,015 - app.services.auth_service - INFO - Buscando usuário com ID (formato original): '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:40:43,015 - app.services.auth_service - INFO - ObjectId válido criado: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:43,137 - app.services.auth_service - INFO - Usuário encontrado: jordano.f@gmail.com, ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:43,137 - app.services.auth_service - INFO - ObjectId convertido para string: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:43,137 - app.core.dependencies - INFO - Usuário opcional autenticado: jordano.f@gmail.com
+INFO:     189.18.182.3:55095 - "GET /api/auth/check HTTP/1.1" 200 OK
+2025-04-10 15:40:43,905 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:40:43,905 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'exp': 1744385423}
+2025-04-10 15:40:43,905 - app.middleware.email_verification - INFO - Verificando acesso ao caminho: /tasks/67f7deb5555a063bccc558c4/edit
+2025-04-10 15:40:43,905 - app.core.dependencies - INFO - Tentando obter usuário opcional (sem contexto de requisição)
+2025-04-10 15:40:43,905 - app.core.dependencies - WARNING - Token recebido é um objeto Request. Tentando extrair token dos headers.
+2025-04-10 15:40:43,906 - app.core.dependencies - INFO - Token extraído do header: eyJhbGciOi...
+2025-04-10 15:40:43,906 - app.core.dependencies - INFO - Tentando decodificar token para usuário opcional...
+2025-04-10 15:40:43,906 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:40:43,906 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'exp': 1744385423}
+2025-04-10 15:40:43,906 - app.services.auth_service - INFO - Buscando usuário com ID (formato original): '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:40:43,906 - app.services.auth_service - INFO - ObjectId válido criado: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:44,028 - app.services.auth_service - INFO - Usuário encontrado: jordano.f@gmail.com, ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:44,028 - app.services.auth_service - INFO - ObjectId convertido para string: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:44,029 - app.core.dependencies - INFO - Usuário opcional autenticado: jordano.f@gmail.com
+2025-04-10 15:40:44,029 - app.middleware.email_verification - INFO - Usuário autenticado: jordano.f@gmail.com, verificado: True
+2025-04-10 15:40:44,029 - app.middleware.email_verification - INFO - Usuário verificado, permitindo acesso: jordano.f@gmail.com
+2025-04-10 15:40:44,029 - app.core.dependencies - INFO - Verificando autenticação (sem contexto de requisição)
+2025-04-10 15:40:44,029 - app.core.dependencies - INFO - Tentando decodificar token...
+2025-04-10 15:40:44,029 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:40:44,029 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'exp': 1744385423}
+2025-04-10 15:40:44,029 - app.core.dependencies - INFO - Token decodificado com sucesso para usuário ID: '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:40:44,030 - app.core.dependencies - INFO - Buscando usuário com ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:44,030 - app.services.auth_service - INFO - Buscando usuário com ID (formato original): '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:40:44,030 - app.services.auth_service - INFO - ObjectId válido criado: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:44,152 - app.services.auth_service - INFO - Usuário encontrado: jordano.f@gmail.com, ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:44,152 - app.services.auth_service - INFO - ObjectId convertido para string: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:44,152 - app.core.dependencies - INFO - Usuário autenticado com sucesso: jordano.f@gmail.com
+2025-04-10 15:40:44,152 - app.services.task_service - INFO - Buscando tarefa 67f7deb5555a063bccc558c4 com verificação de usuário 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:44,274 - app.services.client_service - INFO - Filtrando clientes por user_id: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:44,397 - app.services.client_service - INFO - Recuperados 1 clientes
+INFO:     189.18.182.3:55095 - "GET /tasks/67f7deb5555a063bccc558c4/edit?_=m9biyyv3 HTTP/1.1" 200 OK
+2025-04-10 15:40:44,869 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:40:44,869 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'email': 'jordano.f@gmail.com', 'username': 'jordano.f@gmail.com', 'role': 'user', 'exp': 1744385821}
+2025-04-10 15:40:44,869 - app.middleware.email_verification - INFO - Verificando acesso ao caminho: /api/auth/check
+2025-04-10 15:40:44,869 - app.middleware.email_verification - INFO - Caminho isento de verificação: /api/auth/check
+2025-04-10 15:40:44,870 - app.core.dependencies - INFO - Tentando obter usuário opcional (sem contexto de requisição)
+2025-04-10 15:40:44,870 - app.core.dependencies - INFO - Tentando decodificar token para usuário opcional...
+2025-04-10 15:40:44,870 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:40:44,870 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'email': 'jordano.f@gmail.com', 'username': 'jordano.f@gmail.com', 'role': 'user', 'exp': 1744385821}
+2025-04-10 15:40:44,870 - app.services.auth_service - INFO - Buscando usuário com ID (formato original): '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:40:44,870 - app.services.auth_service - INFO - ObjectId válido criado: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:44,992 - app.services.auth_service - INFO - Usuário encontrado: jordano.f@gmail.com, ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:44,992 - app.services.auth_service - INFO - ObjectId convertido para string: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:44,993 - app.core.dependencies - INFO - Usuário opcional autenticado: jordano.f@gmail.com
+INFO:     189.18.182.3:55095 - "GET /api/auth/check HTTP/1.1" 200 OK
+2025-04-10 15:40:48,574 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:40:48,574 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'email': 'jordano.f@gmail.com', 'username': 'jordano.f@gmail.com', 'role': 'user', 'exp': 1744385821}
+2025-04-10 15:40:48,574 - app.middleware.email_verification - INFO - Verificando acesso ao caminho: /api/v1/tasks/67f7deb5555a063bccc558c4
+2025-04-10 15:40:48,574 - app.core.dependencies - INFO - Tentando obter usuário opcional (sem contexto de requisição)
+2025-04-10 15:40:48,574 - app.core.dependencies - WARNING - Token recebido é um objeto Request. Tentando extrair token dos headers.
+2025-04-10 15:40:48,574 - app.core.dependencies - INFO - Token extraído do header: eyJhbGciOi...
+2025-04-10 15:40:48,574 - app.core.dependencies - INFO - Tentando decodificar token para usuário opcional...
+2025-04-10 15:40:48,574 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:40:48,575 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'email': 'jordano.f@gmail.com', 'username': 'jordano.f@gmail.com', 'role': 'user', 'exp': 1744385821}
+2025-04-10 15:40:48,575 - app.services.auth_service - INFO - Buscando usuário com ID (formato original): '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:40:48,575 - app.services.auth_service - INFO - ObjectId válido criado: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:48,697 - app.services.auth_service - INFO - Usuário encontrado: jordano.f@gmail.com, ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:48,697 - app.services.auth_service - INFO - ObjectId convertido para string: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:48,697 - app.core.dependencies - INFO - Usuário opcional autenticado: jordano.f@gmail.com
+2025-04-10 15:40:48,697 - app.middleware.email_verification - INFO - Usuário autenticado: jordano.f@gmail.com, verificado: True
+2025-04-10 15:40:48,697 - app.middleware.email_verification - INFO - Usuário verificado, permitindo acesso: jordano.f@gmail.com
+2025-04-10 15:40:48,698 - app.core.dependencies - INFO - Verificando autenticação (sem contexto de requisição)
+2025-04-10 15:40:48,698 - app.core.dependencies - INFO - Tentando decodificar token...
+2025-04-10 15:40:48,698 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:40:48,699 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'email': 'jordano.f@gmail.com', 'username': 'jordano.f@gmail.com', 'role': 'user', 'exp': 1744385821}
+2025-04-10 15:40:48,699 - app.core.dependencies - INFO - Token decodificado com sucesso para usuário ID: '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:40:48,699 - app.core.dependencies - INFO - Buscando usuário com ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:48,699 - app.services.auth_service - INFO - Buscando usuário com ID (formato original): '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:40:48,699 - app.services.auth_service - INFO - ObjectId válido criado: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:48,821 - app.services.auth_service - INFO - Usuário encontrado: jordano.f@gmail.com, ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:48,821 - app.services.auth_service - INFO - ObjectId convertido para string: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:48,821 - app.core.dependencies - INFO - Usuário autenticado com sucesso: jordano.f@gmail.com
+2025-04-10 15:40:48,821 - app.services.task_service - INFO - Tentativa de atualização da tarefa 67f7deb5555a063bccc558c4
+2025-04-10 15:40:48,821 - app.services.task_service - INFO - User ID fornecido: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:48,821 - app.services.task_service - INFO - Dados para atualização: {'title': 'tarefa', 'description': 'teste de interecao', 'priority': 'URGENT_IMPORTANT', 'status': 'TODO', 'due_date': '2025-04-11T00:00:00.000Z', 'client_id': '67f7d9eefb33efad92c79c4a', 'assignee': 'eu'}
+2025-04-10 15:40:48,943 - app.services.task_service - INFO - Permitindo edição da tarefa 67f7deb5555a063bccc558c4 que já está concluída, mesmo que não seja o proprietário
+2025-04-10 15:40:48,944 - app.services.task_service - ERROR - Erro ao atualizar tarefa: cannot access local variable 'ClientService' where it is not associated with a value
+2025-04-10 15:40:48,944 - app.services.task_service - INFO - Buscando tarefa 67f7deb5555a063bccc558c4 sem verificação de usuário
+2025-04-10 15:40:49,066 - app.api.routes.tasks - WARNING - Usuário jordano.f@gmail.com tentou atualizar tarefa 67f7deb5555a063bccc558c4 que pertence a outro usuário
+INFO:     189.18.182.3:55095 - "PUT /api/v1/tasks/67f7deb5555a063bccc558c4 HTTP/1.1" 403 Forbidden
+2025-04-10 15:40:55,022 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:40:55,022 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'exp': 1744385423}
+2025-04-10 15:40:55,023 - app.middleware.email_verification - INFO - Verificando acesso ao caminho: /tasks/kanban
+2025-04-10 15:40:55,023 - app.core.dependencies - INFO - Tentando obter usuário opcional (sem contexto de requisição)
+2025-04-10 15:40:55,023 - app.core.dependencies - WARNING - Token recebido é um objeto Request. Tentando extrair token dos headers.
+2025-04-10 15:40:55,023 - app.core.dependencies - INFO - Token extraído do header: eyJhbGciOi...
+2025-04-10 15:40:55,023 - app.core.dependencies - INFO - Tentando decodificar token para usuário opcional...
+2025-04-10 15:40:55,023 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:40:55,023 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'exp': 1744385423}
+2025-04-10 15:40:55,023 - app.services.auth_service - INFO - Buscando usuário com ID (formato original): '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:40:55,023 - app.services.auth_service - INFO - ObjectId válido criado: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:55,145 - app.services.auth_service - INFO - Usuário encontrado: jordano.f@gmail.com, ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:55,145 - app.services.auth_service - INFO - ObjectId convertido para string: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:55,146 - app.core.dependencies - INFO - Usuário opcional autenticado: jordano.f@gmail.com
+2025-04-10 15:40:55,146 - app.middleware.email_verification - INFO - Usuário autenticado: jordano.f@gmail.com, verificado: True
+2025-04-10 15:40:55,146 - app.middleware.email_verification - INFO - Usuário verificado, permitindo acesso: jordano.f@gmail.com
+2025-04-10 15:40:55,146 - app.core.dependencies - INFO - Verificando autenticação (sem contexto de requisição)
+2025-04-10 15:40:55,147 - app.core.dependencies - INFO - Tentando decodificar token...
+2025-04-10 15:40:55,147 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:40:55,147 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'exp': 1744385423}
+2025-04-10 15:40:55,147 - app.core.dependencies - INFO - Token decodificado com sucesso para usuário ID: '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:40:55,147 - app.core.dependencies - INFO - Buscando usuário com ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:55,147 - app.services.auth_service - INFO - Buscando usuário com ID (formato original): '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:40:55,147 - app.services.auth_service - INFO - ObjectId válido criado: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:55,269 - app.services.auth_service - INFO - Usuário encontrado: jordano.f@gmail.com, ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:55,269 - app.services.auth_service - INFO - ObjectId convertido para string: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:55,270 - app.core.dependencies - INFO - Usuário autenticado com sucesso: jordano.f@gmail.com
+2025-04-10 15:40:55,270 - app.services.task_service - INFO - Filtrando tarefas por user_id: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:55,270 - app.services.task_service - INFO - Executando consulta de tarefas com filtro: {'user_id': '67f7cb2aceaea56f0e1bb65c'}
+2025-04-10 15:40:55,392 - app.services.task_service - INFO - Recuperadas 3 tarefas do MongoDB
+INFO:     189.18.182.3:55096 - "GET /tasks/kanban?_=m9biz7fr HTTP/1.1" 200 OK
+2025-04-10 15:40:56,048 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:40:56,048 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'email': 'jordano.f@gmail.com', 'username': 'jordano.f@gmail.com', 'role': 'user', 'exp': 1744385821}
+2025-04-10 15:40:56,049 - app.middleware.email_verification - INFO - Verificando acesso ao caminho: /api/auth/check
+2025-04-10 15:40:56,049 - app.middleware.email_verification - INFO - Caminho isento de verificação: /api/auth/check
+2025-04-10 15:40:56,049 - app.core.dependencies - INFO - Tentando obter usuário opcional (sem contexto de requisição)
+2025-04-10 15:40:56,049 - app.core.dependencies - INFO - Tentando decodificar token para usuário opcional...
+2025-04-10 15:40:56,049 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:40:56,049 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'email': 'jordano.f@gmail.com', 'username': 'jordano.f@gmail.com', 'role': 'user', 'exp': 1744385821}
+2025-04-10 15:40:56,049 - app.services.auth_service - INFO - Buscando usuário com ID (formato original): '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:40:56,049 - app.services.auth_service - INFO - ObjectId válido criado: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:56,172 - app.services.auth_service - INFO - Usuário encontrado: jordano.f@gmail.com, ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:56,172 - app.services.auth_service - INFO - ObjectId convertido para string: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:56,172 - app.core.dependencies - INFO - Usuário opcional autenticado: jordano.f@gmail.com
+INFO:     189.18.182.3:55096 - "GET /api/auth/check HTTP/1.1" 200 OK
+2025-04-10 15:40:57,333 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:40:57,334 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'email': 'jordano.f@gmail.com', 'username': 'jordano.f@gmail.com', 'role': 'user', 'exp': 1744385821}
+2025-04-10 15:40:57,334 - app.middleware.email_verification - INFO - Verificando acesso ao caminho: /api/v1/tasks/67f7e3075c402cd43efd5a11/status
+2025-04-10 15:40:57,334 - app.core.dependencies - INFO - Tentando obter usuário opcional (sem contexto de requisição)
+2025-04-10 15:40:57,334 - app.core.dependencies - WARNING - Token recebido é um objeto Request. Tentando extrair token dos headers.
+2025-04-10 15:40:57,334 - app.core.dependencies - INFO - Token extraído do header: eyJhbGciOi...
+2025-04-10 15:40:57,334 - app.core.dependencies - INFO - Tentando decodificar token para usuário opcional...
+2025-04-10 15:40:57,334 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:40:57,334 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'email': 'jordano.f@gmail.com', 'username': 'jordano.f@gmail.com', 'role': 'user', 'exp': 1744385821}
+2025-04-10 15:40:57,334 - app.services.auth_service - INFO - Buscando usuário com ID (formato original): '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:40:57,334 - app.services.auth_service - INFO - ObjectId válido criado: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:57,456 - app.services.auth_service - INFO - Usuário encontrado: jordano.f@gmail.com, ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:57,456 - app.services.auth_service - INFO - ObjectId convertido para string: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:57,457 - app.core.dependencies - INFO - Usuário opcional autenticado: jordano.f@gmail.com
+2025-04-10 15:40:57,457 - app.middleware.email_verification - INFO - Usuário autenticado: jordano.f@gmail.com, verificado: True
+2025-04-10 15:40:57,457 - app.middleware.email_verification - INFO - Usuário verificado, permitindo acesso: jordano.f@gmail.com
+2025-04-10 15:40:57,458 - app.core.dependencies - INFO - Verificando autenticação (sem contexto de requisição)
+2025-04-10 15:40:57,458 - app.core.dependencies - INFO - Tentando decodificar token...
+2025-04-10 15:40:57,458 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:40:57,459 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'email': 'jordano.f@gmail.com', 'username': 'jordano.f@gmail.com', 'role': 'user', 'exp': 1744385821}
+2025-04-10 15:40:57,459 - app.core.dependencies - INFO - Token decodificado com sucesso para usuário ID: '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:40:57,459 - app.core.dependencies - INFO - Buscando usuário com ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:57,459 - app.services.auth_service - INFO - Buscando usuário com ID (formato original): '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:40:57,459 - app.services.auth_service - INFO - ObjectId válido criado: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:57,581 - app.services.auth_service - INFO - Usuário encontrado: jordano.f@gmail.com, ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:57,581 - app.services.auth_service - INFO - ObjectId convertido para string: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:57,581 - app.core.dependencies - INFO - Usuário autenticado com sucesso: jordano.f@gmail.com
+2025-04-10 15:40:57,581 - app.services.task_service - INFO - Tentativa de atualização da tarefa 67f7e3075c402cd43efd5a11
+2025-04-10 15:40:57,581 - app.services.task_service - INFO - User ID fornecido: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:57,581 - app.services.task_service - INFO - Dados para atualização: {'status': <TaskStatus.TODO: 'TODO'>}
+2025-04-10 15:40:57,704 - app.services.task_service - INFO - Permitindo edição da tarefa 67f7e3075c402cd43efd5a11 que já está concluída, mesmo que não seja o proprietário
+2025-04-10 15:40:57,829 - app.services.task_service - INFO - Buscando tarefa 67f7e3075c402cd43efd5a11 com verificação de usuário 67f7cb2aceaea56f0e1bb65c
+INFO:     189.18.182.3:55096 - "PATCH /api/v1/tasks/67f7e3075c402cd43efd5a11/status HTTP/1.1" 200 OK
+2025-04-10 15:40:59,771 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:40:59,771 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'exp': 1744385423}
+2025-04-10 15:40:59,771 - app.middleware.email_verification - INFO - Verificando acesso ao caminho: /tasks
+2025-04-10 15:40:59,771 - app.core.dependencies - INFO - Tentando obter usuário opcional (sem contexto de requisição)
+2025-04-10 15:40:59,771 - app.core.dependencies - WARNING - Token recebido é um objeto Request. Tentando extrair token dos headers.
+2025-04-10 15:40:59,771 - app.core.dependencies - INFO - Token extraído do header: eyJhbGciOi...
+2025-04-10 15:40:59,771 - app.core.dependencies - INFO - Tentando decodificar token para usuário opcional...
+2025-04-10 15:40:59,772 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:40:59,772 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'exp': 1744385423}
+2025-04-10 15:40:59,772 - app.services.auth_service - INFO - Buscando usuário com ID (formato original): '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:40:59,772 - app.services.auth_service - INFO - ObjectId válido criado: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:59,894 - app.services.auth_service - INFO - Usuário encontrado: jordano.f@gmail.com, ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:59,894 - app.services.auth_service - INFO - ObjectId convertido para string: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:59,895 - app.core.dependencies - INFO - Usuário opcional autenticado: jordano.f@gmail.com
+2025-04-10 15:40:59,895 - app.middleware.email_verification - INFO - Usuário autenticado: jordano.f@gmail.com, verificado: True
+2025-04-10 15:40:59,895 - app.middleware.email_verification - INFO - Usuário verificado, permitindo acesso: jordano.f@gmail.com
+2025-04-10 15:40:59,895 - app.core.dependencies - INFO - Verificando autenticação (sem contexto de requisição)
+2025-04-10 15:40:59,895 - app.core.dependencies - INFO - Tentando decodificar token...
+2025-04-10 15:40:59,895 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:40:59,895 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'exp': 1744385423}
+2025-04-10 15:40:59,895 - app.core.dependencies - INFO - Token decodificado com sucesso para usuário ID: '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:40:59,895 - app.core.dependencies - INFO - Buscando usuário com ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:40:59,895 - app.services.auth_service - INFO - Buscando usuário com ID (formato original): '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:40:59,895 - app.services.auth_service - INFO - ObjectId válido criado: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:41:00,074 - app.services.auth_service - INFO - Usuário encontrado: jordano.f@gmail.com, ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:41:00,074 - app.services.auth_service - INFO - ObjectId convertido para string: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:41:00,075 - app.core.dependencies - INFO - Usuário autenticado com sucesso: jordano.f@gmail.com
+2025-04-10 15:41:00,075 - app.services.task_service - INFO - Filtrando tarefas por user_id: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:41:00,075 - app.services.task_service - INFO - Executando consulta de tarefas com filtro: {'user_id': '67f7cb2aceaea56f0e1bb65c'}
+2025-04-10 15:41:00,198 - app.services.task_service - INFO - Recuperadas 3 tarefas do MongoDB
+INFO:     189.18.182.3:55096 - "GET /tasks?_=m9bizb3o HTTP/1.1" 200 OK
+2025-04-10 15:41:00,824 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:41:00,824 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'email': 'jordano.f@gmail.com', 'username': 'jordano.f@gmail.com', 'role': 'user', 'exp': 1744385821}
+2025-04-10 15:41:00,824 - app.middleware.email_verification - INFO - Verificando acesso ao caminho: /api/auth/check
+2025-04-10 15:41:00,825 - app.middleware.email_verification - INFO - Caminho isento de verificação: /api/auth/check
+2025-04-10 15:41:00,825 - app.core.dependencies - INFO - Tentando obter usuário opcional (sem contexto de requisição)
+2025-04-10 15:41:00,825 - app.core.dependencies - INFO - Tentando decodificar token para usuário opcional...
+2025-04-10 15:41:00,825 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:41:00,825 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'email': 'jordano.f@gmail.com', 'username': 'jordano.f@gmail.com', 'role': 'user', 'exp': 1744385821}
+2025-04-10 15:41:00,825 - app.services.auth_service - INFO - Buscando usuário com ID (formato original): '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:41:00,825 - app.services.auth_service - INFO - ObjectId válido criado: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:41:00,948 - app.services.auth_service - INFO - Usuário encontrado: jordano.f@gmail.com, ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:41:00,948 - app.services.auth_service - INFO - ObjectId convertido para string: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:41:00,948 - app.core.dependencies - INFO - Usuário opcional autenticado: jordano.f@gmail.com
+INFO:     189.18.182.3:55096 - "GET /api/auth/check HTTP/1.1" 200 OK
+2025-04-10 15:41:29,591 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:41:29,591 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'exp': 1744385423}
+2025-04-10 15:41:29,591 - app.middleware.email_verification - INFO - Verificando acesso ao caminho: /tasks/67f7e3075c402cd43efd5a11/edit
+2025-04-10 15:41:29,591 - app.core.dependencies - INFO - Tentando obter usuário opcional (sem contexto de requisição)
+2025-04-10 15:41:29,591 - app.core.dependencies - WARNING - Token recebido é um objeto Request. Tentando extrair token dos headers.
+2025-04-10 15:41:29,591 - app.core.dependencies - INFO - Token extraído do header: eyJhbGciOi...
+2025-04-10 15:41:29,591 - app.core.dependencies - INFO - Tentando decodificar token para usuário opcional...
+2025-04-10 15:41:29,591 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:41:29,592 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'exp': 1744385423}
+2025-04-10 15:41:29,592 - app.services.auth_service - INFO - Buscando usuário com ID (formato original): '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:41:29,592 - app.services.auth_service - INFO - ObjectId válido criado: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:41:29,714 - app.services.auth_service - INFO - Usuário encontrado: jordano.f@gmail.com, ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:41:29,714 - app.services.auth_service - INFO - ObjectId convertido para string: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:41:29,714 - app.core.dependencies - INFO - Usuário opcional autenticado: jordano.f@gmail.com
+2025-04-10 15:41:29,714 - app.middleware.email_verification - INFO - Usuário autenticado: jordano.f@gmail.com, verificado: True
+2025-04-10 15:41:29,714 - app.middleware.email_verification - INFO - Usuário verificado, permitindo acesso: jordano.f@gmail.com
+2025-04-10 15:41:29,715 - app.core.dependencies - INFO - Verificando autenticação (sem contexto de requisição)
+2025-04-10 15:41:29,715 - app.core.dependencies - INFO - Tentando decodificar token...
+2025-04-10 15:41:29,715 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:41:29,715 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'exp': 1744385423}
+2025-04-10 15:41:29,715 - app.core.dependencies - INFO - Token decodificado com sucesso para usuário ID: '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:41:29,715 - app.core.dependencies - INFO - Buscando usuário com ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:41:29,715 - app.services.auth_service - INFO - Buscando usuário com ID (formato original): '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:41:29,715 - app.services.auth_service - INFO - ObjectId válido criado: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:41:29,837 - app.services.auth_service - INFO - Usuário encontrado: jordano.f@gmail.com, ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:41:29,837 - app.services.auth_service - INFO - ObjectId convertido para string: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:41:29,838 - app.core.dependencies - INFO - Usuário autenticado com sucesso: jordano.f@gmail.com
+2025-04-10 15:41:29,838 - app.services.task_service - INFO - Buscando tarefa 67f7e3075c402cd43efd5a11 com verificação de usuário 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:41:29,960 - app.services.client_service - INFO - Filtrando clientes por user_id: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:41:30,083 - app.services.client_service - INFO - Recuperados 1 clientes
+INFO:     189.18.182.3:55100 - "GET /tasks/67f7e3075c402cd43efd5a11/edit?_=m9bizy40 HTTP/1.1" 200 OK
+2025-04-10 15:41:30,729 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:41:30,729 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'email': 'jordano.f@gmail.com', 'username': 'jordano.f@gmail.com', 'role': 'user', 'exp': 1744385821}
+2025-04-10 15:41:30,730 - app.middleware.email_verification - INFO - Verificando acesso ao caminho: /api/auth/check
+2025-04-10 15:41:30,730 - app.middleware.email_verification - INFO - Caminho isento de verificação: /api/auth/check
+2025-04-10 15:41:30,730 - app.core.dependencies - INFO - Tentando obter usuário opcional (sem contexto de requisição)
+2025-04-10 15:41:30,730 - app.core.dependencies - INFO - Tentando decodificar token para usuário opcional...
+2025-04-10 15:41:30,730 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:41:30,731 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'email': 'jordano.f@gmail.com', 'username': 'jordano.f@gmail.com', 'role': 'user', 'exp': 1744385821}
+2025-04-10 15:41:30,731 - app.services.auth_service - INFO - Buscando usuário com ID (formato original): '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:41:30,731 - app.services.auth_service - INFO - ObjectId válido criado: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:41:30,853 - app.services.auth_service - INFO - Usuário encontrado: jordano.f@gmail.com, ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:41:30,853 - app.services.auth_service - INFO - ObjectId convertido para string: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:41:30,853 - app.core.dependencies - INFO - Usuário opcional autenticado: jordano.f@gmail.com
+INFO:     189.18.182.3:55100 - "GET /api/auth/check HTTP/1.1" 200 OK
+2025-04-10 15:41:33,643 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:41:33,643 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'email': 'jordano.f@gmail.com', 'username': 'jordano.f@gmail.com', 'role': 'user', 'exp': 1744385821}
+2025-04-10 15:41:33,643 - app.middleware.email_verification - INFO - Verificando acesso ao caminho: /api/v1/tasks/67f7e3075c402cd43efd5a11
+2025-04-10 15:41:33,643 - app.core.dependencies - INFO - Tentando obter usuário opcional (sem contexto de requisição)
+2025-04-10 15:41:33,643 - app.core.dependencies - WARNING - Token recebido é um objeto Request. Tentando extrair token dos headers.
+2025-04-10 15:41:33,643 - app.core.dependencies - INFO - Token extraído do header: eyJhbGciOi...
+2025-04-10 15:41:33,643 - app.core.dependencies - INFO - Tentando decodificar token para usuário opcional...
+2025-04-10 15:41:33,643 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:41:33,643 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'email': 'jordano.f@gmail.com', 'username': 'jordano.f@gmail.com', 'role': 'user', 'exp': 1744385821}
+2025-04-10 15:41:33,643 - app.services.auth_service - INFO - Buscando usuário com ID (formato original): '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:41:33,644 - app.services.auth_service - INFO - ObjectId válido criado: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:41:33,766 - app.services.auth_service - INFO - Usuário encontrado: jordano.f@gmail.com, ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:41:33,766 - app.services.auth_service - INFO - ObjectId convertido para string: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:41:33,766 - app.core.dependencies - INFO - Usuário opcional autenticado: jordano.f@gmail.com
+2025-04-10 15:41:33,766 - app.middleware.email_verification - INFO - Usuário autenticado: jordano.f@gmail.com, verificado: True
+2025-04-10 15:41:33,766 - app.middleware.email_verification - INFO - Usuário verificado, permitindo acesso: jordano.f@gmail.com
+2025-04-10 15:41:33,767 - app.core.dependencies - INFO - Verificando autenticação (sem contexto de requisição)
+2025-04-10 15:41:33,767 - app.core.dependencies - INFO - Tentando decodificar token...
+2025-04-10 15:41:33,767 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:41:33,767 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'email': 'jordano.f@gmail.com', 'username': 'jordano.f@gmail.com', 'role': 'user', 'exp': 1744385821}
+2025-04-10 15:41:33,767 - app.core.dependencies - INFO - Token decodificado com sucesso para usuário ID: '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:41:33,767 - app.core.dependencies - INFO - Buscando usuário com ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:41:33,767 - app.services.auth_service - INFO - Buscando usuário com ID (formato original): '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:41:33,767 - app.services.auth_service - INFO - ObjectId válido criado: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:41:33,889 - app.services.auth_service - INFO - Usuário encontrado: jordano.f@gmail.com, ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:41:33,890 - app.services.auth_service - INFO - ObjectId convertido para string: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:41:33,890 - app.core.dependencies - INFO - Usuário autenticado com sucesso: jordano.f@gmail.com
+2025-04-10 15:41:33,890 - app.services.task_service - INFO - Tentativa de atualização da tarefa 67f7e3075c402cd43efd5a11
+2025-04-10 15:41:33,890 - app.services.task_service - INFO - User ID fornecido: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:41:33,890 - app.services.task_service - INFO - Dados para atualização: {'title': 'tarefa 3', 'description': 'pelo editar', 'priority': 'URGENT_IMPORTANT', 'status': 'IN_PROGRESS', 'due_date': '2025-04-11T00:00:00.000Z', 'client_id': '67f7d9eefb33efad92c79c4a', 'assignee': 'None'}
+2025-04-10 15:41:34,012 - app.services.task_service - INFO - Verificando propriedade da tarefa 67f7e3075c402cd43efd5a11 para usuário 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:41:34,134 - app.services.task_service - INFO - Tarefa 67f7e3075c402cd43efd5a11 encontrada para o usuário 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:41:34,134 - app.services.task_service - ERROR - Erro ao atualizar tarefa: cannot access local variable 'ClientService' where it is not associated with a value
+2025-04-10 15:41:34,134 - app.services.task_service - INFO - Buscando tarefa 67f7e3075c402cd43efd5a11 sem verificação de usuário
+2025-04-10 15:41:34,256 - app.api.routes.tasks - WARNING - Usuário jordano.f@gmail.com tentou atualizar tarefa 67f7e3075c402cd43efd5a11 que pertence a outro usuário
+INFO:     189.18.182.3:55100 - "PUT /api/v1/tasks/67f7e3075c402cd43efd5a11 HTTP/1.1" 403 Forbidden
+INFO:     Shutting down
+2025-04-10 15:42:15,326 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:42:15,326 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'exp': 1744385423}
+2025-04-10 15:42:15,326 - app.middleware.email_verification - INFO - Verificando acesso ao caminho: /tasks/67f7e3075c402cd43efd5a11/edit
+2025-04-10 15:42:15,326 - app.core.dependencies - INFO - Tentando obter usuário opcional (sem contexto de requisição)
+2025-04-10 15:42:15,326 - app.core.dependencies - WARNING - Token recebido é um objeto Request. Tentando extrair token dos headers.
+2025-04-10 15:42:15,326 - app.core.dependencies - INFO - Token extraído do header: eyJhbGciOi...
+2025-04-10 15:42:15,326 - app.core.dependencies - INFO - Tentando decodificar token para usuário opcional...
+2025-04-10 15:42:15,326 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:42:15,327 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'exp': 1744385423}
+2025-04-10 15:42:15,327 - app.services.auth_service - INFO - Buscando usuário com ID (formato original): '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:42:15,327 - app.services.auth_service - INFO - ObjectId válido criado: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:42:15,449 - app.services.auth_service - INFO - Usuário encontrado: jordano.f@gmail.com, ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:42:15,449 - app.services.auth_service - INFO - ObjectId convertido para string: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:42:15,450 - app.core.dependencies - INFO - Usuário opcional autenticado: jordano.f@gmail.com
+2025-04-10 15:42:15,450 - app.middleware.email_verification - INFO - Usuário autenticado: jordano.f@gmail.com, verificado: True
+2025-04-10 15:42:15,450 - app.middleware.email_verification - INFO - Usuário verificado, permitindo acesso: jordano.f@gmail.com
+2025-04-10 15:42:15,450 - app.core.dependencies - INFO - Verificando autenticação (sem contexto de requisição)
+2025-04-10 15:42:15,450 - app.core.dependencies - INFO - Tentando decodificar token...
+2025-04-10 15:42:15,450 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:42:15,451 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'exp': 1744385423}
+2025-04-10 15:42:15,451 - app.core.dependencies - INFO - Token decodificado com sucesso para usuário ID: '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:42:15,451 - app.core.dependencies - INFO - Buscando usuário com ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:42:15,451 - app.services.auth_service - INFO - Buscando usuário com ID (formato original): '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:42:15,451 - app.services.auth_service - INFO - ObjectId válido criado: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:42:15,573 - app.services.auth_service - INFO - Usuário encontrado: jordano.f@gmail.com, ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:42:15,573 - app.services.auth_service - INFO - ObjectId convertido para string: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:42:15,574 - app.core.dependencies - INFO - Usuário autenticado com sucesso: jordano.f@gmail.com
+2025-04-10 15:42:15,574 - app.services.task_service - INFO - Buscando tarefa 67f7e3075c402cd43efd5a11 com verificação de usuário 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:42:15,696 - app.services.client_service - INFO - Filtrando clientes por user_id: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:42:15,819 - app.services.client_service - INFO - Recuperados 1 clientes
+INFO:     189.18.182.3:55113 - "GET /tasks/67f7e3075c402cd43efd5a11/edit?_=m9bizy40 HTTP/1.1" 200 OK
+2025-04-10 15:42:16,450 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:42:16,451 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'email': 'jordano.f@gmail.com', 'username': 'jordano.f@gmail.com', 'role': 'user', 'exp': 1744385821}
+2025-04-10 15:42:16,451 - app.middleware.email_verification - INFO - Verificando acesso ao caminho: /api/auth/check
+2025-04-10 15:42:16,451 - app.middleware.email_verification - INFO - Caminho isento de verificação: /api/auth/check
+2025-04-10 15:42:16,451 - app.core.dependencies - INFO - Tentando obter usuário opcional (sem contexto de requisição)
+2025-04-10 15:42:16,451 - app.core.dependencies - INFO - Tentando decodificar token para usuário opcional...
+2025-04-10 15:42:16,451 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:42:16,451 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'email': 'jordano.f@gmail.com', 'username': 'jordano.f@gmail.com', 'role': 'user', 'exp': 1744385821}
+2025-04-10 15:42:16,451 - app.services.auth_service - INFO - Buscando usuário com ID (formato original): '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:42:16,452 - app.services.auth_service - INFO - ObjectId válido criado: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:42:16,574 - app.services.auth_service - INFO - Usuário encontrado: jordano.f@gmail.com, ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:42:16,574 - app.services.auth_service - INFO - ObjectId convertido para string: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:42:16,574 - app.core.dependencies - INFO - Usuário opcional autenticado: jordano.f@gmail.com
+INFO:     189.18.182.3:55113 - "GET /api/auth/check HTTP/1.1" 200 OK
+2025-04-10 15:42:18,980 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:42:18,981 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'email': 'jordano.f@gmail.com', 'username': 'jordano.f@gmail.com', 'role': 'user', 'exp': 1744385821}
+2025-04-10 15:42:18,981 - app.middleware.email_verification - INFO - Verificando acesso ao caminho: /api/v1/tasks/67f7e3075c402cd43efd5a11
+2025-04-10 15:42:18,981 - app.core.dependencies - INFO - Tentando obter usuário opcional (sem contexto de requisição)
+2025-04-10 15:42:18,981 - app.core.dependencies - WARNING - Token recebido é um objeto Request. Tentando extrair token dos headers.
+2025-04-10 15:42:18,981 - app.core.dependencies - INFO - Token extraído do header: eyJhbGciOi...
+2025-04-10 15:42:18,981 - app.core.dependencies - INFO - Tentando decodificar token para usuário opcional...
+2025-04-10 15:42:18,981 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:42:18,981 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'email': 'jordano.f@gmail.com', 'username': 'jordano.f@gmail.com', 'role': 'user', 'exp': 1744385821}
+2025-04-10 15:42:18,981 - app.services.auth_service - INFO - Buscando usuário com ID (formato original): '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:42:18,981 - app.services.auth_service - INFO - ObjectId válido criado: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:42:19,103 - app.services.auth_service - INFO - Usuário encontrado: jordano.f@gmail.com, ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:42:19,103 - app.services.auth_service - INFO - ObjectId convertido para string: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:42:19,104 - app.core.dependencies - INFO - Usuário opcional autenticado: jordano.f@gmail.com
+2025-04-10 15:42:19,104 - app.middleware.email_verification - INFO - Usuário autenticado: jordano.f@gmail.com, verificado: True
+2025-04-10 15:42:19,104 - app.middleware.email_verification - INFO - Usuário verificado, permitindo acesso: jordano.f@gmail.com
+2025-04-10 15:42:19,104 - app.core.dependencies - INFO - Verificando autenticação (sem contexto de requisição)
+2025-04-10 15:42:19,105 - app.core.dependencies - INFO - Tentando decodificar token...
+2025-04-10 15:42:19,105 - app.services.auth_service - INFO - Tentando decodificar token: eyJhbGciOiJIUzI1NiIs...
+2025-04-10 15:42:19,105 - app.services.auth_service - INFO - Token decodificado com sucesso. Payload: {'sub': '67f7cb2aceaea56f0e1bb65c', 'email': 'jordano.f@gmail.com', 'username': 'jordano.f@gmail.com', 'role': 'user', 'exp': 1744385821}
+2025-04-10 15:42:19,105 - app.core.dependencies - INFO - Token decodificado com sucesso para usuário ID: '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:42:19,105 - app.core.dependencies - INFO - Buscando usuário com ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:42:19,105 - app.services.auth_service - INFO - Buscando usuário com ID (formato original): '67f7cb2aceaea56f0e1bb65c'
+2025-04-10 15:42:19,105 - app.services.auth_service - INFO - ObjectId válido criado: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:42:19,228 - app.services.auth_service - INFO - Usuário encontrado: jordano.f@gmail.com, ID: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:42:19,228 - app.services.auth_service - INFO - ObjectId convertido para string: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:42:19,229 - app.core.dependencies - INFO - Usuário autenticado com sucesso: jordano.f@gmail.com
+2025-04-10 15:42:19,229 - app.services.task_service - INFO - Tentativa de atualização da tarefa 67f7e3075c402cd43efd5a11
+2025-04-10 15:42:19,229 - app.services.task_service - INFO - User ID fornecido: 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:42:19,229 - app.services.task_service - INFO - Dados para atualização: {'title': 'tarefa 3', 'description': 'pelo editar', 'priority': 'URGENT_IMPORTANT', 'status': 'IN_PROGRESS', 'due_date': '2025-04-11T00:00:00.000Z', 'client_id': '67f7d9eefb33efad92c79c4a', 'assignee': 'None'}
+2025-04-10 15:42:19,351 - app.services.task_service - INFO - Verificando propriedade da tarefa 67f7e3075c402cd43efd5a11 para usuário 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:42:19,473 - app.services.task_service - INFO - Tarefa 67f7e3075c402cd43efd5a11 encontrada para o usuário 67f7cb2aceaea56f0e1bb65c
+2025-04-10 15:42:19,474 - app.services.task_service - ERROR - Erro ao atualizar tarefa: cannot access local variable 'ClientService' where it is not associated with a value
+2025-04-10 15:42:19,474 - app.services.task_service - INFO - Buscando tarefa 67f7e3075c402cd43efd5a11 sem verificação de usuário
+2025-04-10 15:42:19,596 - app.api.routes.tasks - WARNING - Usuário jordano.f@gmail.com tentou atualizar tarefa 67f7e3075c402cd43efd5a11 que pertence a outro usuário
+INFO:     189.18.182.3:55113 - "PUT /api/v1/tasks/67f7e3075c402cd43efd5a11 HTTP/1.1" 403 Forbidden
+INFO:     Waiting for application shutdown.
+2025-04-10 15:42:35,283 - app.main - INFO - Shutting down...
+2025-04-10 15:42:35,283 - app.services.scheduler_service - INFO - Scheduler desligado
+2025-04-10 15:42:35,283 - app.core.database - INFO - Closing MongoDB connection...
+2025-04-10 15:42:35,405 - app.core.database - INFO - MongoDB connection closed
+2025-04-10 15:42:35,405 - apscheduler.scheduler - INFO - Scheduler has been shut down
+INFO:     Application shutdown complete.
+INFO:     Finished server process [15704]

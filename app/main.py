@@ -1,7 +1,8 @@
-from fastapi import FastAPI, Request, HTTPException, Depends
+from fastapi import FastAPI, Request, HTTPException, Depends, BackgroundTasks, Form, Cookie, Response, Query, Header
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.security import OAuth2PasswordBearer
 from starlette.middleware.base import BaseHTTPMiddleware
 from app.core.config import settings
@@ -20,14 +21,14 @@ from app.services.notification_service import NotificationService
 from app.core.dependencies import get_current_user, get_optional_user
 import logging
 from datetime import datetime, timezone, timedelta
-from fastapi.responses import JSONResponse
-from typing import Dict, Any, Optional
 from fastapi.responses import JSONResponse, RedirectResponse
+from typing import Dict, Any, Optional
 from app.middleware.email_verification import EmailVerificationMiddleware
 from app.jobs.contact_schedule_job import start_contact_schedule_job
 from app.jobs.notification_job import start_notification_job
 import asyncio
 from app.services.user_service import UserService
+from app.core.database import Database
 
 # Configure logging
 logging.basicConfig(
@@ -49,6 +50,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 "/api/auth/verify-email",
                 "/api/auth/reset-password",
                 "/api/auth/reset-password-confirm",
+                "/api/auth/resend-verification",
                 "/login",
                 "/register",
                 "/forgot-password",
@@ -61,8 +63,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 "/auth/verification-success",
                 "/auth/verification-error",
                 "/auth/verification-pending",
+                "/auth/verify-email",
                 "/calendar/google/callback",
-                "/landing"  # Adicionando landing como rota pública
+                "/landing"
+                "/scripts/fix_tasks_without_user.py"  # Adicionando landing como rota pública
             ]
             
             # Se for um caminho público, ignora completamente a verificação
@@ -150,6 +154,10 @@ async def startup_event():
         # Inicializar conexão com o banco de dados
         await connect_to_mongo()
         
+        # Verificar e corrigir clientes com _id null na inicialização
+        await Database.check_and_fix_null_ids()
+        logger.info("Verificação e correção de clientes com ID nulo concluída")
+        
         # Inicializar configurações de notificação para usuários existentes
         await UserService.initialize_notification_settings()
         
@@ -231,11 +239,11 @@ app.include_router(
 # Incluir roteadores web
 app.include_router(calendar_router.router)
 
+# Add email verification middleware first
+app.add_middleware(EmailVerificationMiddleware)
+
 # Add auth middleware
 app.add_middleware(AuthMiddleware)
-
-# Add email verification middleware
-app.add_middleware(EmailVerificationMiddleware)
 
 # Root route
 @app.get("/")
@@ -341,6 +349,12 @@ async def client_detail_page(request: Request, client_id: str, current_user: Use
 
 @app.get("/clients/{client_id}/edit")
 async def edit_client_page(request: Request, client_id: str, current_user: User = Depends(get_current_user)):
+    # Verificação explícita para valores inválidos de client_id
+    if client_id.lower() in ['none', 'null', 'undefined', '']:
+        logger.warning(f"Tentativa de editar cliente com ID inválido: {client_id}")
+        # Redirecionar para a lista de clientes
+        return RedirectResponse(url="/clients", status_code=302)
+        
     client = await ClientService.get_client_by_id(client_id)
     if not client:
         raise HTTPException(status_code=404, detail="Cliente não encontrado")

@@ -54,6 +54,11 @@ class ClientService:
     @staticmethod
     async def get_client_by_id(client_id: str) -> Client:
         try:
+            # Verificar se o client_id é válido
+            if not client_id or client_id.lower() in ('none', 'null', 'undefined', ''):
+                logger.error(f"ID de cliente inválido: {client_id}")
+                return None
+                
             client = await Database.database["clients"].find_one({"_id": ObjectId(client_id)})
             if client:
                 # Garantir que os campos RFM estão corretos
@@ -79,9 +84,18 @@ class ClientService:
     @staticmethod
     async def create_client(client: ClientCreate) -> Client:
         try:
-            logger.info("Tentando criar um novo cliente com os dados: %s", client.dict())
+            # Correção para compatibilidade com diferentes versões do Pydantic
+            if hasattr(client, 'model_dump'):
+                logger.info("Tentando criar um novo cliente com os dados: %s", client.model_dump())
+                client_dict = client.model_dump(by_alias=True)
+            else:
+                logger.info("Tentando criar um novo cliente com os dados: %s", client.dict())
+                client_dict = client.dict(by_alias=True)
             
-            client_dict = client.dict(by_alias=True)
+            # Remover campo _id se existir para garantir que o MongoDB gere automaticamente
+            if "_id" in client_dict:
+                logger.warning(f"Campo _id encontrado no payload e será removido: {client_dict['_id']}")
+                client_dict.pop("_id")
             
             # Garantir que as datas são timezone-aware
             now = datetime.now(timezone.utc)
@@ -132,7 +146,10 @@ class ClientService:
                 raise ValueError("Cliente não encontrado")
             
             # Extrai os dados do novo cliente
-            client_dict = client.dict(exclude={"id"}, by_alias=True)
+            if hasattr(client, 'model_dump'):
+                client_dict = client.model_dump(exclude={"id"}, by_alias=True)
+            else:
+                client_dict = client.dict(exclude={"id"}, by_alias=True)
             
             # Garantir que campos obrigatórios estejam presentes
             if "interaction_history" not in client_dict or client_dict["interaction_history"] is None:
@@ -217,7 +234,11 @@ class ClientService:
             if interaction.date.tzinfo is None:
                 interaction.date = interaction.date.replace(tzinfo=timezone.utc)
             
-            interaction_dict = interaction.dict()
+            # Correção para compatibilidade com diferentes versões do Pydantic
+            if hasattr(interaction, 'model_dump'):
+                interaction_dict = interaction.model_dump()
+            else:
+                interaction_dict = interaction.dict()
             
             # Atualizar o cliente com a nova interação e última data de contato
             update_result = await Database.database["clients"].update_one(

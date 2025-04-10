@@ -28,7 +28,7 @@
 
         <div class="text-center">
             <button 
-                onclick="resendVerification()"
+                onclick="resendVerificationEmail(this)"
                 class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition-colors"
                 id="resendButton">
                 Reenviar Email de Verificação
@@ -38,8 +38,7 @@
 </div>
 
 <script>
-async function resendVerification() {
-    const button = document.getElementById('resendButton');
+async function resendVerificationEmail(button) {
     button.disabled = true;
     button.textContent = 'Enviando...';
 
@@ -52,6 +51,8 @@ async function resendVerification() {
             return;
         }
 
+        console.log('Enviando requisição para reenviar email para:', email);
+
         const response = await fetch('/api/auth/resend-verification', {
             method: 'POST',
             headers: {
@@ -60,17 +61,21 @@ async function resendVerification() {
             body: JSON.stringify({ email: email })
         });
 
+        console.log('Status da resposta:', response.status);
+        const data = await response.json();
+        console.log('Dados da resposta:', data);
+
         if (response.ok) {
             alert('Email de verificação reenviado com sucesso! Por favor, verifique sua caixa de entrada e spam.');
         } else {
-            const data = await response.json();
             alert(data.detail || 'Erro ao reenviar email');
             if (response.status === 404) {
                 window.location.href = '/login';
             }
         }
     } catch (error) {
-        alert('Erro ao reenviar email');
+        console.error('Erro ao reenviar email:', error);
+        alert('Erro ao reenviar email: ' + error.message);
     } finally {
         button.disabled = false;
         button.textContent = 'Reenviar Email de Verificação';

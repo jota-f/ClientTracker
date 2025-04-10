@@ -3,6 +3,7 @@ from typing import List, Optional
 from datetime import datetime, timezone, timedelta
 from enum import Enum
 from bson import ObjectId
+from bson.errors import InvalidId
 
 class PyObjectId(str):
     @classmethod
@@ -11,8 +12,23 @@ class PyObjectId(str):
 
     @classmethod
     def validate(cls, v, values=None, **kwargs):
+        if v is None:
+            return None
         if isinstance(v, ObjectId):
             return str(v)
+        if isinstance(v, str):
+            # Verificação mais robusta para valores inválidos
+            stripped = v.strip().lower()
+            if not stripped or stripped in ('none', 'null', 'undefined'):
+                return None
+            
+            # Tentar converter para ObjectId para validar o formato
+            try:
+                ObjectId(v)
+                return v
+            except InvalidId:
+                # Se não for um ObjectId válido, retorne None
+                return None
         return v
 
 class ClientStatus(str, Enum):

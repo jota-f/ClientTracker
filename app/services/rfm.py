@@ -63,7 +63,12 @@ def calculate_rfm_score(last_contact: datetime, sales_potential: int, interactio
     
     if interactions:
         for interaction in interactions:
-            interaction_date = interaction.get('date', None)
+            # Adaptação para suportar tanto dicionários quanto objetos Interaction
+            if hasattr(interaction, 'date'):
+                interaction_date = interaction.date
+            else:
+                interaction_date = interaction.get('date', None)
+                
             if interaction_date:
                 if isinstance(interaction_date, str):
                     try:
