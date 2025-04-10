@@ -13,6 +13,7 @@ from app.services.calendar_service import CalendarService
 from app.services.client_service import ClientService
 from app.services.user_service import UserService
 from app.services.auth_service import AuthService
+from app.models.client import Interaction
 
 # Configurar logging
 logger = logging.getLogger(__name__)
@@ -365,6 +366,17 @@ async def create_event(
                 if client:
                     client.next_followup = start_datetime
                     await ClientService.update_client(client_id=client_id, client=client)
+                    
+                    # Adicionar interação ao histórico do cliente
+                    interaction = Interaction(
+                        type="EVENTO_CALENDÁRIO",
+                        notes=f"Evento criado no calendário: {title}",
+                        outcome=f"Agendado para {start_datetime.strftime('%d/%m/%Y %H:%M')}"
+                    )
+                    
+                    # Adicionar interação ao cliente
+                    await ClientService.add_interaction(client_id, interaction)
+                    logger.info(f"Interação adicionada automaticamente ao cliente {client_id} pela criação de evento no calendário")
             
             return RedirectResponse(url="/calendar?msg=Evento+criado+com+sucesso", status_code=303)
         else:

@@ -745,6 +745,7 @@ class CalendarService:
     async def create_client_followup_event(user_id: str, client_id: str, followup_date: datetime) -> Dict[str, Any]:
         """Criar um evento de acompanhamento de cliente no calendário"""
         from app.services.client_service import ClientService
+        from app.models.client import Interaction
         
         try:
             client = await ClientService.get_client_by_id(client_id)
@@ -785,6 +786,17 @@ class CalendarService:
                     client_id=client_id,
                     client=client
                 )
+                
+                # Adicionar interação ao histórico do cliente
+                interaction = Interaction(
+                    type="ACOMPANHAMENTO_AGENDADO",
+                    notes=f"Acompanhamento agendado no calendário",
+                    outcome=f"Agendado para {start_time.strftime('%d/%m/%Y %H:%M')}"
+                )
+                
+                # Adicionar interação ao cliente
+                await ClientService.add_interaction(client_id, interaction)
+                logger.info(f"Interação adicionada automaticamente ao cliente {client.name} pela criação de evento de acompanhamento")
                 
                 logger.info(f"Evento de acompanhamento criado para o cliente {client.name}")
             

@@ -49,6 +49,7 @@ class CalendarEventCreate(BaseModel):
     description: Optional[str] = None
     attendees: Optional[List[str]] = None
     all_day: Optional[bool] = False
+    client_id: Optional[str] = None
 
 class CalendarEvent(BaseModel):
     id: str
@@ -172,6 +173,30 @@ async def create_calendar_event(
             attendees=event.attendees,
             all_day=event.all_day
         )
+        
+        # Se o evento foi criado com sucesso e tem um cliente associado
+        if result.get("success") and event.client_id:
+            from app.services.client_service import ClientService
+            from app.models.client import Interaction
+            
+            # Verificar se o cliente existe e pertence ao usuário atual
+            client = await ClientService.get_client_by_id(event.client_id)
+            if client and client.user_id == str(current_user.id):
+                # Atualizar a data de próximo contato
+                client.next_followup = event.start_time
+                await ClientService.update_client(client_id=event.client_id, client=client)
+                
+                # Adicionar interação ao histórico do cliente
+                interaction = Interaction(
+                    type="EVENTO_CALENDÁRIO",
+                    notes=f"Evento criado no calendário via API: {event.title}",
+                    outcome=f"Agendado para {event.start_time.strftime('%d/%m/%Y %H:%M')}"
+                )
+                
+                # Adicionar interação ao cliente
+                await ClientService.add_interaction(event.client_id, interaction)
+                logger.info(f"Interação adicionada automaticamente ao cliente {event.client_id} pela criação de evento via API")
+        
         return result
     except Exception as e:
         logger.error(f"Erro ao criar evento no calendário: {str(e)}")
