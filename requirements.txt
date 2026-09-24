@@ -24,7 +24,6 @@ python-multipart==0.0.6
 
 # HTTP Client & Scheduling
 httpx>=0.25.0
-fastapi-mail>=1.0.0
 apscheduler>=3.10.0
 
 # Machine Learning & In-House Model Inference
