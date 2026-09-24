@@ -11,6 +11,8 @@
 
 **Predictive B2B CRM & Execution Engine driven by In-House Machine Learning and Hybrid AI Orchestration.**
 
+[English](README.md) • [Português (Brasil)](README.pt-BR.md)
+
 [Key Capabilities](#key-capabilities) • [Hybrid AI Architecture](#hybrid-ai-architecture) • [In-House ML Model](#in-house-ml-model--training) • [Tech Stack](#tech-stack) • [Quickstart](#getting-started) • [License](#license)
 
 </div>
