@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Novo' if not client else 'Editar' }} Cliente - ClientTracker{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6">
+        <h1 class="text-3xl font-bold mb-6">{{ 'Novo' if not client else 'Editar' }} Cliente</h1>
+
+        <form id="clientForm" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Nome</label>
+                    <input type="text" name="name" value="{{ client.name if client else '' }}" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Empresa</label>
+                    <input type="text" name="company" value="{{ client.company if client else '' }}" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" name="email" value="{{ client.email if client else '' }}" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Telefone</label>
+                    <input type="tel" name="phone" value="{{ client.phone if client else '' }}"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Status</label>
+                    <select name="status" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        {% for status in ['LEAD', 'OPPORTUNITY', 'CUSTOMER', 'ACTIVE', 'INACTIVE'] %}
+                        <option value="{{ status }}" {{ 'selected' if client and client.status == status else '' }}>
+                            {{ status }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Potencial de Venda (1-5)</label>
+                    <input type="number" name="sales_potential" min="1" max="5" 
+                        value="{{ client.sales_potential if client else '3' }}" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Próximo Follow-up</label>
+                    <input type="date" name="next_followup" 
+                        value="{{ client.next_followup.strftime('%Y-%m-%d') if client else '' }}" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+                
+                <!-- Campo oculto para garantir que last_contact sempre tenha valor -->
+                <input type="hidden" name="last_contact" id="last_contact_hidden" 
+                    value="{{ client.last_contact.strftime('%Y-%m-%d') if client else '' }}">
+            </div>
+
+            <div class="flex justify-end space-x-4 mt-6">
+                <a href="/clients"
+                    class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                    Cancelar
+                </a>
+                <button type="submit"
+                    class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                    Salvar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.getElementById('clientForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    
+    // Garantir que temos uma data de último contato
+    if (!formData.get('last_contact') || formData.get('last_contact') === '') {
+        // Se não houver data de último contato, use a data atual
+        document.getElementById('last_contact_hidden').value = new Date().toISOString().split('T')[0];
+    }
+    
+    // Formatação correta das datas com timezone UTC
+    const nextFollowupDate = new Date(formData.get('next_followup') + 'T12:00:00Z'); // Adicionar hora para evitar problemas com timezone
+    
+    // Para último contato, use o campo oculto ou a data atual
+    const lastContactRaw = formData.get('last_contact') || document.getElementById('last_contact_hidden').value;
+    const lastContactDate = lastContactRaw ? new Date(lastContactRaw + 'T12:00:00Z') : new Date();
+    
+    // Função para garantir formato ISO8601 com timezone Z (UTC)
+    const formatDateUTC = (date) => {
+        try {
+            if (!(date instanceof Date) || isNaN(date.getTime())) {
+                console.error('Data inválida:', date);
+                return new Date().toISOString(); // Fallback para data atual
+            }
+            
+            // Garante que a data tenha timezone UTC
+            return date.toISOString();
+        } catch (error) {
+            console.error('Erro ao formatar data:', error);
+            return new Date().toISOString(); // Fallback para data atual
+        }
+    };
+    
+    // Validar datas antes de enviar
+    if (isNaN(nextFollowupDate.getTime())) {
+        alert('Data de próximo follow-up inválida. Por favor, verifique o formato.');
+        return;
+    }
+    
+    // Obter o ID do cliente atual (se existir)
+    const clientId = '{{ client.id if client else "" }}';
+    
+    // Log detalhado para depuração
+    console.log("Formulário em modo:", clientId ? "edição" : "criação");
+    console.log("ID do cliente:", clientId ? clientId : "nenhum (novo cliente)");
+    
+    // Verificações adicionais para garantir que temos um ID válido
+    const isValidId = clientId && clientId.trim() !== '' && 
+                      !['none', 'null', 'undefined'].includes(clientId.toLowerCase());
+                      
+    if (clientId && !isValidId) {
+        console.error('ID do cliente inválido:', clientId);
+        alert('Erro: ID do cliente inválido. Você será redirecionado para a lista de clientes.');
+        window.location.href = '/clients';
+        return;
+    }
+    
+    // Obter token do localStorage para autorização
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+        alert('Você não está autenticado. Faça login novamente.');
+        window.location.href = '/login';
+        return;
+    }
+    
+    let data = {};
+    
+    if (clientId) {
+        // Se estiver editando, obtenha os dados existentes primeiro
+        try {
+            const response = await fetch(`/api/v1/clients/${clientId}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Erro ao obter dados do cliente: ${response.status} ${response.statusText}`);
+            }
+            
+            // Dados existentes que serão modificados
+            data = await response.json();
+            
+            // Atualizar campos do formulário
+            data.name = formData.get('name');
+            data.company = formData.get('company');
+            data.email = formData.get('email');
+            data.phone = formData.get('phone');
+            data.status = formData.get('status');
+            data.sales_potential = parseInt(formData.get('sales_potential'));
+            data.next_followup = formatDateUTC(nextFollowupDate);
+            
+            // Manter o last_contact existente se estiver editando
+            // Apenas atualize se estiver fazendo uma interação
+            if (!data.last_contact) {
+                data.last_contact = formatDateUTC(lastContactDate);
+            }
+            
+        } catch (error) {
+            console.error('Erro ao obter cliente existente:', error);
+            alert('Erro ao obter dados do cliente: ' + error.message);
+            return;
+        }
+    } else {
+        // Se estiver criando um novo cliente
+        data = {
+            name: formData.get('name'),
+            company: formData.get('company'),
+            email: formData.get('email'),
+            phone: formData.get('phone'),
+            status: formData.get('status'),
+            sales_potential: parseInt(formData.get('sales_potential')),
+            next_followup: formatDateUTC(nextFollowupDate),
+            last_contact: formatDateUTC(lastContactDate),
+            interaction_history: [],
+            pending_tasks: []
+        };
+    }
+
+    // Validar dados obrigatórios
+    const requiredFields = ['name', 'company', 'email', 'status', 'sales_potential'];
+    const missingFields = requiredFields.filter(field => !data[field]);
+    
+    if (missingFields.length > 0) {
+        console.error('Campos obrigatórios ausentes:', missingFields);
+        alert(`Por favor, preencha os seguintes campos obrigatórios: ${missingFields.join(', ')}`);
+        return;
+    }
+
+    // Validar formato das datas
+    if (!data.next_followup || !data.last_contact) {
+        console.error('Datas inválidas ou não fornecidas');
+        alert('Por favor, verifique as datas de próximo contato e último contato.');
+        return;
+    }
+    
+    // Garantir que temos arrays vazios, não undefined ou null
+    if (!data.interaction_history || !Array.isArray(data.interaction_history)) {
+        data.interaction_history = [];
+    }
+    
+    if (!data.pending_tasks || !Array.isArray(data.pending_tasks)) {
+        data.pending_tasks = [];
+    }
+
+    // Logs detalhados
+    console.log("Dados enviados para o servidor:", data);
+    console.log("Tipos de dados:");
+    console.log("- name:", typeof data.name);
+    console.log("- company:", typeof data.company);
+    console.log("- email:", typeof data.email);
+    console.log("- phone:", typeof data.phone);
+    console.log("- status:", typeof data.status);
+    console.log("- sales_potential:", typeof data.sales_potential);
+    console.log("- next_followup:", typeof data.next_followup, data.next_followup);
+    console.log("- last_contact:", typeof data.last_contact, data.last_contact);
+    console.log("- interaction_history:", typeof data.interaction_history, Array.isArray(data.interaction_history));
+    console.log("- pending_tasks:", typeof data.pending_tasks, Array.isArray(data.pending_tasks));
+
+    const method = isValidId ? 'PUT' : 'POST';
+    const url = isValidId ? `/api/v1/clients/${clientId}` : '/api/v1/clients/';
+    
+    console.log("Método HTTP:", method);
+    console.log("URL da requisição:", url);
+
+    try {
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Erro detalhado:', errorData);
+            throw new Error(JSON.stringify(errorData) || `Erro ao salvar cliente: ${response.status} ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        console.log("Cliente salvo com sucesso:", result);
+        
+        // Verificar se temos um ID válido antes de redirecionar para edição
+        if (method === 'POST' && result && result._id) {
+            console.log("Cliente criado com ID:", result._id);
+            // Redirecionar para a lista de clientes em vez de tentar editar imediatamente
+            window.location.href = '/clients';
+        } else {
+            // Se for uma edição (PUT) ou não tiver ID válido, ir para a lista
+            window.location.href = '/clients';
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert(error.message || 'Erro ao salvar cliente. Verifique se todos os campos foram preenchidos corretamente.');
+    }
+});
+</script>
+{% endblock %} 

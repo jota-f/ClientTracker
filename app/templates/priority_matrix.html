@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block title %}PriorityMatrix™ | ClientTracker{% endblock %}
+
+{% block content %}
+<div class="bg-white shadow rounded-lg overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <div class="flex justify-between items-center">
+            <h1 class="text-xl font-semibold text-gray-800">PriorityMatrix™</h1>
+            <div class="flex space-x-2">
+                <a href="/tasks" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <svg class="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
+                    </svg>
+                    Lista
+                </a>
+                <a href="/tasks/kanban" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <svg class="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                    </svg>
+                    Kanban
+                </a>
+                <a href="/tasks/new" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                    </svg>
+                    Nova Tarefa
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Quadrante 1: FAÇA AGORA -->
+            <div class="bg-red-50 border border-red-200 rounded-lg overflow-hidden">
+                <div class="px-4 py-3 bg-red-100 border-b border-red-200">
+                    <h2 class="font-semibold text-red-800">FAÇA AGORA</h2>
+                    <p class="text-sm text-red-600">Urgente + Importante</p>
+                </div>
+                <div class="priority-quadrant p-4 min-h-[250px]" id="URGENT_IMPORTANT" data-priority="URGENT_IMPORTANT">
+                    {% for task in matrix.urgent_important %}
+                    <div class="priority-item mb-2 p-3 bg-white rounded shadow-sm border border-gray-200 cursor-move" 
+                         data-id="{{ task.id }}" draggable="true">
+                        <a href="/tasks/{{ task.id }}" class="font-medium text-gray-800 hover:text-blue-600">
+                            {{ task.title }}
+                        </a>
+                        {% if task.client_name %}
+                        <p class="text-xs text-gray-500 mt-1">Cliente: {{ task.client_name }}</p>
+                        {% endif %}
+                        {% if task.due_date %}
+                        <div class="mt-2 flex items-center text-xs text-gray-500">
+                            <svg class="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                            </svg>
+                            <span class="{% if task.due_date < now %}text-red-600 font-medium{% endif %}">
+                                {{ task.due_date.strftime('%d/%m/%Y') }}
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <p class="text-sm text-gray-500 italic">Nenhuma tarefa nesta categoria</p>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Quadrante 2: PLANEJE -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg overflow-hidden">
+                <div class="px-4 py-3 bg-blue-100 border-b border-blue-200">
+                    <h2 class="font-semibold text-blue-800">PLANEJE</h2>
+                    <p class="text-sm text-blue-600">Importante + Não Urgente</p>
+                </div>
+                <div class="priority-quadrant p-4 min-h-[250px]" id="NOT_URGENT_IMPORTANT" data-priority="NOT_URGENT_IMPORTANT">
+                    {% for task in matrix.not_urgent_important %}
+                    <div class="priority-item mb-2 p-3 bg-white rounded shadow-sm border border-gray-200 cursor-move" 
+                         data-id="{{ task.id }}" draggable="true">
+                        <a href="/tasks/{{ task.id }}" class="font-medium text-gray-800 hover:text-blue-600">
+                            {{ task.title }}
+                        </a>
+                        {% if task.client_name %}
+                        <p class="text-xs text-gray-500 mt-1">Cliente: {{ task.client_name }}</p>
+                        {% endif %}
+                        {% if task.due_date %}
+                        <div class="mt-2 flex items-center text-xs text-gray-500">
+                            <svg class="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                            </svg>
+                            <span class="{% if task.due_date < now %}text-red-600 font-medium{% endif %}">
+                                {{ task.due_date.strftime('%d/%m/%Y') }}
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <p class="text-sm text-gray-500 italic">Nenhuma tarefa nesta categoria</p>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Quadrante 3: RESOLVA RÁPIDO OU DELEGUE -->
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg overflow-hidden">
+                <div class="px-4 py-3 bg-yellow-100 border-b border-yellow-200">
+                    <h2 class="font-semibold text-yellow-800">RESOLVA RÁPIDO OU DELEGUE</h2>
+                    <p class="text-sm text-yellow-600">Urgente + Menos Importante</p>
+                </div>
+                <div class="priority-quadrant p-4 min-h-[250px]" id="URGENT_NOT_IMPORTANT" data-priority="URGENT_NOT_IMPORTANT">
+                    {% for task in matrix.urgent_not_important %}
+                    <div class="priority-item mb-2 p-3 bg-white rounded shadow-sm border border-gray-200 cursor-move" 
+                         data-id="{{ task.id }}" draggable="true">
+                        <a href="/tasks/{{ task.id }}" class="font-medium text-gray-800 hover:text-blue-600">
+                            {{ task.title }}
+                        </a>
+                        {% if task.client_name %}
+                        <p class="text-xs text-gray-500 mt-1">Cliente: {{ task.client_name }}</p>
+                        {% endif %}
+                        {% if task.due_date %}
+                        <div class="mt-2 flex items-center text-xs text-gray-500">
+                            <svg class="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                            </svg>
+                            <span class="{% if task.due_date < now %}text-red-600 font-medium{% endif %}">
+                                {{ task.due_date.strftime('%d/%m/%Y') }}
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <p class="text-sm text-gray-500 italic">Nenhuma tarefa nesta categoria</p>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Quadrante 4: POSTERGUE OU DESCARTE -->
+            <div class="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
+                <div class="px-4 py-3 bg-gray-100 border-b border-gray-200">
+                    <h2 class="font-semibold text-gray-800">POSTERGUE OU DESCARTE</h2>
+                    <p class="text-sm text-gray-600">Não Urgente + Não Importante</p>
+                </div>
+                <div class="priority-quadrant p-4 min-h-[250px]" id="NOT_URGENT_NOT_IMPORTANT" data-priority="NOT_URGENT_NOT_IMPORTANT">
+                    {% for task in matrix.not_urgent_not_important %}
+                    <div class="priority-item mb-2 p-3 bg-white rounded shadow-sm border border-gray-200 cursor-move" 
+                         data-id="{{ task.id }}" draggable="true">
+                        <a href="/tasks/{{ task.id }}" class="font-medium text-gray-800 hover:text-blue-600">
+                            {{ task.title }}
+                        </a>
+                        {% if task.client_name %}
+                        <p class="text-xs text-gray-500 mt-1">Cliente: {{ task.client_name }}</p>
+                        {% endif %}
+                        {% if task.due_date %}
+                        <div class="mt-2 flex items-center text-xs text-gray-500">
+                            <svg class="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                            </svg>
+                            <span class="{% if task.due_date < now %}text-red-600 font-medium{% endif %}">
+                                {{ task.due_date.strftime('%d/%m/%Y') }}
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <p class="text-sm text-gray-500 italic">Nenhuma tarefa nesta categoria</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Obter todos os quadrantes de prioridade
+        const priorityQuadrants = document.querySelectorAll('.priority-quadrant');
+        
+        // Configurar os quadrantes para receber as tarefas arrastadas
+        priorityQuadrants.forEach(quadrant => {
+            // Quando uma tarefa é arrastada sobre o quadrante
+            quadrant.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('bg-gray-100');
+            });
+            
+            // Quando uma tarefa sai do quadrante
+            quadrant.addEventListener('dragleave', function() {
+                this.classList.remove('bg-gray-100');
+            });
+
+            // Quando uma tarefa é solta no quadrante
+            quadrant.addEventListener('drop', async function(e) {
+                e.preventDefault();
+                this.classList.remove('bg-gray-100');
+                
+                // Obter o ID da tarefa e a nova prioridade
+                const taskId = e.dataTransfer.getData('text');
+                const newPriority = this.dataset.priority;
+                
+                // Encontrar o elemento arrastado
+                const draggedItem = document.querySelector(`.priority-item[data-id="${taskId}"]`);
+                if (draggedItem) {
+                    // Adicionar efeito visual durante o processamento
+                    draggedItem.classList.add('opacity-50');
+                }
+
+                try {
+                    // Enviar a solicitação para atualizar a prioridade
+                    const response = await fetch(`/api/v1/tasks/${taskId}/priority`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ new_priority: newPriority })
+                    });
+
+                    if (response.ok) {
+                        // Mover o item para o novo quadrante sem recarregar a página
+                        if (draggedItem) {
+                            draggedItem.remove();
+                            this.appendChild(draggedItem);
+                            draggedItem.classList.remove('opacity-50');
+                            
+                            // Verificar se o quadrante estava vazio
+                            const emptyMessage = this.querySelector('.text-sm.text-gray-500.italic');
+                            if (emptyMessage) {
+                                emptyMessage.remove();
+                            }
+                        } else {
+                            // Se não conseguir manipular o DOM diretamente, recarregar a página
+                            window.location.reload();
+                        }
+                    } else {
+                        // Exibir mensagem de erro
+                        const errorData = await response.json();
+                        alert(`Erro ao atualizar prioridade: ${errorData.detail}`);
+                        if (draggedItem) {
+                            draggedItem.classList.remove('opacity-50');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Erro ao atualizar prioridade:', error);
+                    alert('Ocorreu um erro ao atualizar a prioridade da tarefa.');
+                    if (draggedItem) {
+                        draggedItem.classList.remove('opacity-50');
+                    }
+                }
+            });
+        });
+
+        // Configurar os itens para serem arrastáveis
+        const priorityItems = document.querySelectorAll('.priority-item');
+        
+        priorityItems.forEach(item => {
+            // Quando o arrasto começa
+            item.addEventListener('dragstart', function(e) {
+                e.dataTransfer.setData('text', this.dataset.id);
+                this.classList.add('opacity-75');
+            });
+            
+            // Quando o arrasto termina
+            item.addEventListener('dragend', function() {
+                this.classList.remove('opacity-75');
+            });
+        });
+    });
+</script>
+{% endblock %} 

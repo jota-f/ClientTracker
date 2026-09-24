@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+        <div class="text-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">Erro na Verificação de Email</h1>
+            <p class="text-gray-600 mt-2">
+                Não foi possível verificar seu email.
+            </p>
+        </div>
+
+        <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-red-700">
+                        {% if message == 'token_invalid' %}
+                            O link de verificação é inválido ou expirou.
+                        {% elif message == 'already_verified' %}
+                            Sua conta já foi verificada.
+                        {% else %}
+                            Ocorreu um erro ao verificar seu email.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center">
+            <a 
+                href="/login"
+                class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition-colors inline-block">
+                Voltar para Login
+            </a>
+            
+            <p class="mt-4 text-sm text-gray-600">
+                Se você ainda está tendo problemas, por favor, 
+                <a href="/register" class="text-blue-600 hover:underline">registre-se novamente</a> 
+                ou entre em contato com o suporte.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %} 

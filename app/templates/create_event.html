@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}Criar Evento{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Criar Evento</h1>
+            <p class="mt-2 text-base text-gray-600">Adicione um novo evento ao seu calendário</p>
+        </div>
+        <div>
+            <a href="{{ url_for('calendar_page') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-150">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M7.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l2.293 2.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                </svg>
+                Voltar ao Calendário
+            </a>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="rounded-lg bg-red-50 p-4 mb-8 border border-red-100">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-red-800">{{ error }}</h3>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="bg-white shadow-lg rounded-xl overflow-hidden">
+        <div class="p-8">
+            <form method="post" action="{{ url_for('create_event') }}" x-data="{ isAllDay: false }">
+                <div class="space-y-8">
+                    <!-- Título do Evento -->
+                    <div>
+                        <label for="title" class="block text-sm font-semibold text-gray-700">Título do Evento *</label>
+                        <div class="mt-2">
+                            <input type="text" id="title" name="title" required 
+                                   value="{{ form_data.title if form_data else '' }}"
+                                   class="shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-lg"
+                                   placeholder="Ex: Reunião com Cliente">
+                        </div>
+                    </div>
+                    
+                    <!-- Data e Hora -->
+                    <div class="space-y-4">
+                        <div class="flex items-center space-x-3">
+                            <input id="all_day" name="all_day" type="checkbox" 
+                                   x-model="isAllDay"
+                                   {% if form_data and form_data.all_day %}checked{% endif %}
+                                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <label for="all_day" class="text-sm font-medium text-gray-700">Evento de dia inteiro</label>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                            <div>
+                                <label for="start_time" class="block text-sm font-semibold text-gray-700">
+                                    <span x-text="isAllDay ? 'Data de Início *' : 'Data e Hora de Início *'"></span>
+                                </label>
+                                <div class="mt-2">
+                                    <input :type="isAllDay ? 'date' : 'datetime-local'" 
+                                           id="start_time" 
+                                           name="start_time" 
+                                           required
+                                           value="{{ default_date }}"
+                                           class="shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-lg">
+                                </div>
+                            </div>
+                            <div>
+                                <label for="end_time" class="block text-sm font-semibold text-gray-700">
+                                    <span x-text="isAllDay ? 'Data de Término *' : 'Data e Hora de Término *'"></span>
+                                </label>
+                                <div class="mt-2">
+                                    <input :type="isAllDay ? 'date' : 'datetime-local'" 
+                                           id="end_time" 
+                                           name="end_time" 
+                                           required
+                                           value="{{ default_end_date }}"
+                                           class="shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-lg">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Descrição -->
+                    <div>
+                        <label for="description" class="block text-sm font-semibold text-gray-700">Descrição</label>
+                        <div class="mt-2">
+                            <textarea id="description" 
+                                    name="description" 
+                                    rows="4"
+                                    placeholder="Adicione detalhes sobre o evento..."
+                                    class="shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-lg">{{ form_data.description if form_data else '' }}</textarea>
+                        </div>
+                    </div>
+                    
+                    <!-- Participantes -->
+                    <div>
+                        <label for="attendees" class="block text-sm font-semibold text-gray-700">Participantes</label>
+                        <div class="mt-2">
+                            <div class="flex rounded-lg shadow-sm">
+                                <input type="text" 
+                                       id="attendees" 
+                                       name="attendees"
+                                       placeholder="email1@exemplo.com, email2@exemplo.com"
+                                       value="{{ form_data.attendees if form_data else '' }}"
+                                       class="flex-1 min-w-0 block w-full px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm border-gray-300">
+                            </div>
+                            <p class="mt-2 text-sm text-gray-500">Separe os e-mails por vírgula</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Associar Cliente -->
+                    <div>
+                        <label for="client_id" class="block text-sm font-semibold text-gray-700">Associar a um Cliente</label>
+                        <div class="mt-2">
+                            <select id="client_id" 
+                                    name="client_id"
+                                    class="shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-lg">
+                                <option value="">Selecione um cliente...</option>
+                                {% for client in clients %}
+                                <option value="{{ client.id }}" {% if client_id and client_id == client.id %}selected{% endif %}>
+                                    {{ client.name }} ({{ client.company }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <p class="mt-2 text-sm text-gray-500">A data de próximo contato do cliente será atualizada automaticamente</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Botões -->
+                    <div class="flex justify-end space-x-4 pt-4">
+                        <a href="{{ url_for('calendar_page') }}" 
+                           class="inline-flex items-center px-6 py-3 border border-gray-300 shadow-sm text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-150">
+                            Cancelar
+                        </a>
+                        <button type="submit" 
+                                class="inline-flex items-center px-6 py-3 border border-transparent shadow-sm text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-150">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" />
+                            </svg>
+                            Criar Evento
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<script>
+    document.addEventListener('alpine:init', () => {
+        // Inicializar Alpine.js
+    });
+</script>
+{% endblock %} 

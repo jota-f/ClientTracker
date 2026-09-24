@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Agendar Acompanhamento - {{ client.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Agendar Acompanhamento</h1>
+            <p class="text-sm text-gray-500">Cliente: {{ client.name }} - {{ client.company }}</p>
+        </div>
+        <div>
+            <a href="{{ url_for('get_client_details', client_id=client.id) }}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M7.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l2.293 2.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                </svg>
+                Voltar para Cliente
+            </a>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="rounded-md bg-red-50 p-4 mb-6">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-red-800">{{ error }}</h3>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <div class="md:col-span-1">
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                <div class="px-4 py-5 sm:px-6">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Informações do Cliente</h3>
+                </div>
+                <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
+                    <dl class="grid grid-cols-1 gap-x-4 gap-y-6">
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">Nome</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ client.name }}</dd>
+                        </div>
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">Empresa</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ client.company }}</dd>
+                        </div>
+                        {% if client.email %}
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">Email</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ client.email }}</dd>
+                        </div>
+                        {% endif %}
+                        {% if client.phone %}
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">Telefone</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ client.phone }}</dd>
+                        </div>
+                        {% endif %}
+                        {% if client.last_contact %}
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">Último Contato</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ client.last_contact.strftime('%d/%m/%Y') }}</dd>
+                        </div>
+                        {% endif %}
+                        {% if hasattr(client, 'rfm_score') %}
+                        <div class="sm:col-span-1">
+                            <dt class="text-sm font-medium text-gray-500">Score RFM</dt>
+                            <dd class="mt-1 text-sm text-gray-900">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                {% if client.rfm_score >= 4.5 %}bg-green-100 text-green-800
+                                {% elif client.rfm_score >= 3.5 %}bg-blue-100 text-blue-800
+                                {% elif client.rfm_score >= 2.5 %}bg-yellow-100 text-yellow-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ "%.1f"|format(client.rfm_score) }}
+                                </span>
+                            </dd>
+                        </div>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+        </div>
+        
+        <div class="md:col-span-2">
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                <div class="px-4 py-5 sm:px-6">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Agendar Próximo Contato</h3>
+                </div>
+                <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+                    <form method="post" action="{{ url_for('create_client_followup', client_id=client.id) }}" class="space-y-6">
+                        <div>
+                            <label for="followup_date" class="block text-sm font-medium text-gray-700">Data e Hora do Próximo Contato *</label>
+                            <div class="mt-1">
+                                <input type="datetime-local" id="followup_date" name="followup_date" required
+                                       value="{{ suggested_date }}"
+                                       class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                            <p class="mt-2 text-xs text-gray-500">
+                                {% if hasattr(client, 'rfm_score') %}
+                                    {% if client.rfm_score >= 4.5 %}
+                                        Sugestão: contato semanal para clientes VIP.
+                                    {% elif client.rfm_score >= 3.5 %}
+                                        Sugestão: contato quinzenal para clientes importantes.
+                                    {% elif client.rfm_score >= 2.5 %}
+                                        Sugestão: contato mensal para clientes regulares.
+                                    {% else %}
+                                        Sugestão: contato bimestral para clientes ocasionais.
+                                    {% endif %}
+                                {% else %}
+                                    Sugestão: contato mensal para acompanhamento regular.
+                                {% endif %}
+                            </p>
+                        </div>
+                        
+                        <div class="rounded-md bg-blue-50 p-4">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-blue-700">
+                                        Um evento será criado no seu calendário e a data de próximo contato do cliente será atualizada.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-end space-x-3">
+                            <a href="{{ url_for('get_client_details', client_id=client.id) }}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                Cancelar
+                            </a>
+                            <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                Agendar Contato
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,39 @@
+# Web Framework & ASGI
+fastapi>=0.100.0
+uvicorn==0.22.0
+jinja2==3.1.2
+aiofiles==23.2.1
+
+# Database (Async MongoDB)
+pymongo==4.5.0
+motor==3.1.1
+
+# Data Validation & Settings
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+python-dotenv==1.0.0
+email-validator>=2.0.0
+python-dateutil==2.8.2
+
+# Security & Authentication
+bcrypt==4.0.1
+passlib==1.7.4
+python-jose==3.3.0
+itsdangerous==2.1.2
+python-multipart==0.0.6
+
+# HTTP Client & Scheduling
+httpx>=0.25.0
+fastapi-mail>=1.0.0
+apscheduler>=3.10.0
+
+# Machine Learning & In-House Model Inference
+xgboost>=1.7.0
+scikit-learn>=1.3.0
+pandas>=2.0.0
+numpy>=1.24.0
+joblib>=1.3.0
+openpyxl>=3.1.0
+
+# Testing
+pytest==7.4.2

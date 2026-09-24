@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if task %}Editar Tarefa{% else %}Nova Tarefa{% endif %} | ClientTracker
+{% endblock %}
+
+{% block content %}
+<div class="bg-white shadow rounded-lg overflow-hidden max-w-3xl mx-auto">
+    <div class="px-6 py-4 border-b border-gray-200">
+        <h2 class="text-xl font-semibold text-gray-800">
+            {% if task %}Editar Tarefa{% else %}Nova Tarefa{% endif %}
+        </h2>
+    </div>
+    <div class="p-6">
+        <form id="taskForm" action="{% if task %}/api/v1/tasks/{{ task.id }}{% else %}/api/v1/tasks/{% endif %}" method="POST">
+            <div class="mb-4">
+                <label for="title" class="block text-sm font-medium text-gray-700 mb-1">Título *</label>
+                <input type="text" id="title" name="title" value="{% if task %}{{ task.title }}{% endif %}" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            </div>
+
+            <div class="mb-4">
+                <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+                <textarea id="description" name="description" rows="3"
+                         class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">{% if task %}{{ task.description }}{% endif %}</textarea>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label for="priority" class="block text-sm font-medium text-gray-700 mb-1">Prioridade (PriorityMatrix™) *</label>
+                    <select id="priority" name="priority" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <option value="" disabled {% if not task %}selected{% endif %}>Selecione uma prioridade</option>
+                        <option value="URGENT_IMPORTANT" {% if task and task.priority == "URGENT_IMPORTANT" %}selected{% endif %}>
+                            FAÇA AGORA
+                        </option>
+                        <option value="NOT_URGENT_IMPORTANT" {% if task and task.priority == "NOT_URGENT_IMPORTANT" %}selected{% endif %}>
+                            PLANEJE
+                        </option>
+                        <option value="URGENT_NOT_IMPORTANT" {% if task and task.priority == "URGENT_NOT_IMPORTANT" %}selected{% endif %}>
+                            RESOLVA RÁPIDO OU DELEGUE
+                        </option>
+                        <option value="NOT_URGENT_NOT_IMPORTANT" {% if task and task.priority == "NOT_URGENT_NOT_IMPORTANT" %}selected{% endif %}>
+                            POSTERGUE OU DESCARTE
+                        </option>
+                    </select>
+                </div>
+                <div>
+                    <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status *</label>
+                    <select id="status" name="status" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <option value="TODO" {% if not task or task.status == "TODO" %}selected{% endif %}>A Fazer</option>
+                        <option value="IN_PROGRESS" {% if task and task.status == "IN_PROGRESS" %}selected{% endif %}>Em Progresso</option>
+                        <option value="DONE" {% if task and task.status == "DONE" %}selected{% endif %}>Concluída</option>
+                        <option value="ARCHIVED" {% if task and task.status == "ARCHIVED" %}selected{% endif %}>Arquivada</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label for="due_date" class="block text-sm font-medium text-gray-700 mb-1">Data de Vencimento</label>
+                    <input type="date" id="due_date" name="due_date" 
+                           value="{% if task and task.due_date %}{{ task.due_date.strftime('%Y-%m-%d') }}{% endif %}"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="client_id" class="block text-sm font-medium text-gray-700 mb-1">Cliente Associado</label>
+                    <select id="client_id" name="client_id"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Nenhum cliente</option>
+                        {% for client in clients %}
+                        <option value="{{ client.id }}" 
+                                {% if task and task.client_id == client.id|string %}selected{% endif %}>
+                            {{ client.name }} ({{ client.company }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label for="assignee" class="block text-sm font-medium text-gray-700 mb-1">Responsável</label>
+                <input type="text" id="assignee" name="assignee" value="{% if task %}{{ task.assignee }}{% endif %}"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            </div>
+
+            <div class="flex justify-between items-center pt-4 border-t border-gray-200">
+                <a href="/tasks" class="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Cancelar
+                </a>
+                <button type="submit" id="submitBtn" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    {% if task %}Atualizar Tarefa{% else %}Criar Tarefa{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const taskForm = document.getElementById('taskForm');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        taskForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processando...';
+            
+            // Preparar os dados do formulário
+            const formData = new FormData(taskForm);
+            const taskData = {};
+            
+            // Registrar todos os dados do formulário para depuração
+            console.log("Dados do formulário:");
+            for (const [key, value] of formData.entries()) {
+                console.log(`${key}: ${value}`);
+            }
+            
+            // Campos obrigatórios
+            const requiredFields = ["title", "priority", "status"];
+            
+            // Verificar campos obrigatórios
+            let missingFields = [];
+            for (const field of requiredFields) {
+                const value = formData.get(field);
+                if (!value || value.trim() === '') {
+                    missingFields.push(field);
+                }
+            }
+            
+            if (missingFields.length > 0) {
+                alert(`Por favor, preencha os seguintes campos obrigatórios: ${missingFields.join(', ')}`);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = "{% if task %}Atualizar Tarefa{% else %}Criar Tarefa{% endif %}";
+                return;
+            }
+            
+            // Processar todos os campos
+            for (const [key, value] of formData.entries()) {
+                // Tratar campos específicos
+                if (key === 'due_date' && value) {
+                    // Converter para formato ISO para datas
+                    const dateObj = new Date(value);
+                    taskData[key] = dateObj.toISOString();
+                } else if (key === 'client_id' && (!value || value === '')) {
+                    // Se client_id estiver vazio, definir como null
+                    taskData[key] = null;
+                } else if (value === '' && !requiredFields.includes(key)) {
+                    // Campos opcionais vazios
+                    taskData[key] = null;
+                } else {
+                    // Outros campos
+                    taskData[key] = value;
+                }
+            }
+            
+            // Garantir que o status tem um valor padrão
+            if (!taskData.status) {
+                taskData.status = 'TODO';
+            }
+            
+            console.log("Dados processados para envio:", taskData);
+            
+            // Método HTTP (POST para criar, PUT para atualizar)
+            const method = "{% if task %}PUT{% else %}POST{% endif %}";
+            const url = taskForm.action;
+            
+            try {
+                console.log(`Enviando ${method} para ${url}`);
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(taskData)
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log("Resposta de sucesso:", result);
+                    window.location.href = '/tasks';
+                } else {
+                    let errorDetail = "Ocorreu um erro ao processar o pedido.";
+                    try {
+                        const errorData = await response.json();
+                        errorDetail = errorData.detail || errorDetail;
+                    } catch (e) {
+                        console.error("Erro ao processar resposta de erro:", e);
+                    }
+                    
+                    console.error("Erro na resposta:", response.status, errorDetail);
+                    alert(`Erro: ${errorDetail}`);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = "{% if task %}Atualizar Tarefa{% else %}Criar Tarefa{% endif %}";
+                }
+            } catch (error) {
+                console.error('Erro ao enviar dados:', error);
+                alert('Ocorreu um erro ao processar o pedido.');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = "{% if task %}Atualizar Tarefa{% else %}Criar Tarefa{% endif %}";
+            }
+        });
+    });
+</script>
+{% endblock %} 

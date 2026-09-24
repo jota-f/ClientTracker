@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}{{ client.name }} - ClientTracker{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-6 flex justify-between items-center">
+        <h1 class="text-3xl font-bold">Detalhes do Cliente</h1>
+        <div>
+            <a href="/clients/{{ client.id }}/edit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded mr-2">Editar</a>
+            <button onclick="deleteClient('{{ client.id }}')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">Excluir</button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Informações Básicas -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold mb-4">Informações Básicas</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-sm font-medium text-gray-500">Nome</label>
+                    <p class="text-lg">{{ client.name }}</p>
+                </div>
+                <div>
+                    <label class="text-sm font-medium text-gray-500">Empresa</label>
+                    <p class="text-lg">{{ client.company }}</p>
+                </div>
+                <div>
+                    <label class="text-sm font-medium text-gray-500">Email</label>
+                    <p class="text-lg">{{ client.email }}</p>
+                </div>
+                <div>
+                    <label class="text-sm font-medium text-gray-500">Telefone</label>
+                    <p class="text-lg">{{ client.phone }}</p>
+                </div>
+                <div>
+                    <label class="text-sm font-medium text-gray-500">Status</label>
+                    <span class="px-3 py-1 inline-flex text-sm font-semibold rounded-full 
+                        {% if client.status == 'ACTIVE' %}bg-green-100 text-green-800
+                        {% elif client.status == 'LEAD' %}bg-blue-100 text-blue-800
+                        {% elif client.status == 'OPPORTUNITY' %}bg-yellow-100 text-yellow-800
+                        {% elif client.status == 'CUSTOMER' %}bg-purple-100 text-purple-800
+                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                        {{ client.status }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Score RFM -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold mb-4">Score RFM</h2>
+            {% if client.rfm_scores %}
+            <div class="space-y-6">
+                <div>
+                    <label class="text-sm font-medium text-gray-500">Score Total</label>
+                    <div class="text-2xl font-bold {{ 'text-green-600' if client.rfm_scores.total >= 10 else 'text-yellow-600' if client.rfm_scores.total >= 7 else 'text-red-600' }}">
+                        {{ client.rfm_scores.total }}
+                        <span class="text-sm text-gray-500">({{ 'Prioridade Alta' if client.rfm_scores.total >= 10 else 'Prioridade Média' if client.rfm_scores.total >= 7 else 'Prioridade Baixa' }})</span>
+                    </div>
+                    <div class="mt-2 text-sm text-gray-600">
+                        Sugestão de contato: 
+                        {% if client.rfm_scores.total >= 9 %}
+                            <span class="font-medium text-green-600">Semanal</span> (cliente VIP)
+                        {% elif client.rfm_scores.total >= 7 %}
+                            <span class="font-medium text-yellow-600">Quinzenal</span> (cliente importante)
+                        {% elif client.rfm_scores.total >= 5 %}
+                            <span class="font-medium text-blue-600">Mensal</span> (cliente regular)
+                        {% else %}
+                            <span class="font-medium text-gray-600">Bimestral</span> (cliente ocasional)
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="text-sm font-medium text-gray-500">Recência</label>
+                        <div class="text-xl font-bold {{ 'text-green-600' if client.rfm_scores.recency >= 4 else 'text-yellow-600' if client.rfm_scores.recency >= 2 else 'text-red-600' }}">
+                            {{ client.rfm_scores.recency }}
+                        </div>
+                        <p class="text-xs text-gray-500">Último contato</p>
+                    </div>
+
+                    <div>
+                        <label class="text-sm font-medium text-gray-500">Potencial</label>
+                        <div class="text-xl font-bold {{ 'text-green-600' if client.rfm_scores.potential >= 4 else 'text-yellow-600' if client.rfm_scores.potential >= 2 else 'text-red-600' }}">
+                            {{ client.rfm_scores.potential }}
+                        </div>
+                        <p class="text-xs text-gray-500">Valor estimado</p>
+                    </div>
+
+                    <div>
+                        <label class="text-sm font-medium text-gray-500">Engajamento</label>
+                        <div class="text-xl font-bold {{ 'text-green-600' if client.rfm_scores.engagement >= 4 else 'text-yellow-600' if client.rfm_scores.engagement >= 2 else 'text-red-600' }}">
+                            {{ client.rfm_scores.engagement }}
+                        </div>
+                        <p class="text-xs text-gray-500">Interações</p>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <p class="text-gray-500">Score RFM não calculado</p>
+            {% endif %}
+        </div>
+
+        <!-- Histórico de Interações -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold">Histórico de Interações</h2>
+                <button onclick="showInteractionModal()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm">
+                    Nova Interação
+                </button>
+            </div>
+            {% if client.interaction_history %}
+            <div class="space-y-4">
+                {% for interaction in client.interaction_history|sort(attribute='date', reverse=true) %}
+                <div class="border-l-4 border-blue-500 pl-4 py-2">
+                    <div class="text-sm text-gray-500">{{ interaction.date.strftime('%d/%m/%Y %H:%M') }}</div>
+                    <div class="font-medium">{{ interaction.type }}</div>
+                    <div class="text-gray-700">{{ interaction.notes }}</div>
+                    {% if interaction.outcome %}
+                    <div class="text-sm text-gray-600 mt-1">Resultado: {{ interaction.outcome }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-500">Nenhuma interação registrada</p>
+            {% endif %}
+        </div>
+
+        <!-- Próximos Passos -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold mb-4">Próximos Passos</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-sm font-medium text-gray-500">Próximo Follow-up</label>
+                    <p class="text-lg">{{ client.next_followup.strftime('%d/%m/%Y') }}</p>
+                </div>
+                {% if client.pending_tasks %}
+                <div>
+                    <label class="text-sm font-medium text-gray-500">Tarefas Pendentes</label>
+                    <ul class="mt-2 space-y-2">
+                        {% for task in client.pending_tasks|sort(attribute='due_date') %}
+                        <li class="flex items-center justify-between">
+                            <div>
+                                <div class="font-medium">{{ task.title }}</div>
+                                <div class="text-sm text-gray-500">{{ task.description }}</div>
+                            </div>
+                            <div class="text-sm {{ 'text-red-600' if task.due_date < now else 'text-gray-500' }}">
+                                {{ task.due_date.strftime('%d/%m/%Y') }}
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Nova Interação -->
+<div id="interactionModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Nova Interação</h3>
+            <form id="interactionForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Tipo</label>
+                    <input type="text" name="type" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Notas</label>
+                    <textarea name="notes" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Resultado</label>
+                    <input type="text" name="outcome" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Próximo Contato</label>
+                    <input type="date" name="next_followup" required 
+                           value="{{ (now + timedelta(
+                               days=7 if client.rfm_scores.total >= 9 else 
+                               14 if client.rfm_scores.total >= 7 else 
+                               30 if client.rfm_scores.total >= 5 else 
+                               60
+                           )).strftime('%Y-%m-%d') }}"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <p class="mt-1 text-sm text-gray-500">
+                        {% if client.rfm_scores.total >= 9 %}
+                            Sugestão: contato semanal (cliente VIP)
+                        {% elif client.rfm_scores.total >= 7 %}
+                            Sugestão: contato quinzenal (cliente importante)
+                        {% elif client.rfm_scores.total >= 5 %}
+                            Sugestão: contato mensal (cliente regular)
+                        {% else %}
+                            Sugestão: contato bimestral (cliente ocasional)
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="hideInteractionModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                        Salvar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function showInteractionModal() {
+    document.getElementById('interactionModal').classList.remove('hidden');
+}
+
+function hideInteractionModal() {
+    document.getElementById('interactionModal').classList.add('hidden');
+}
+
+document.getElementById('interactionForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const data = {
+        type: formData.get('type'),
+        notes: formData.get('notes'),
+        outcome: formData.get('outcome') || null,
+        date: new Date().toISOString(),
+        next_followup: new Date(formData.get('next_followup')).toISOString()
+    };
+
+    try {
+        const response = await fetch(`/api/v1/clients/{{ client.id }}/interactions`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            const error = await response.json();
+            alert(`Erro ao adicionar interação: ${error.detail || 'Erro desconhecido'}`);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Erro ao adicionar interação');
+    }
+});
+
+async function deleteClient(clientId) {
+    if (!confirm('Tem certeza que deseja excluir este cliente?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/v1/clients/${clientId}`, {
+            method: 'DELETE',
+        });
+
+        if (response.ok) {
+            window.location.href = '/clients';
+        } else {
+            const error = await response.json();
+            alert(`Erro ao excluir cliente: ${error.detail || 'Erro desconhecido'}`);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Erro ao excluir cliente');
+    }
+}
+</script>
+{% endblock %} 

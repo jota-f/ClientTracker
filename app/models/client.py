@@ -1,0 +1,139 @@
+from pydantic import BaseModel, EmailStr, Field, validator
+from typing import List, Optional
+from datetime import datetime, timezone, timedelta
+from enum import Enum
+from bson import ObjectId
+from bson.errors import InvalidId
+
+class PyObjectId(str):
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v, values=None, **kwargs):
+        if v is None:
+            return None
+        if isinstance(v, ObjectId):
+            return str(v)
+        if isinstance(v, str):
+            # Verificação mais robusta para valores inválidos
+            stripped = v.strip().lower()
+            if not stripped or stripped in ('none', 'null', 'undefined'):
+                return None
+            
+            # Tentar converter para ObjectId para validar o formato
+            try:
+                ObjectId(v)
+                return v
+            except InvalidId:
+                # Se não for um ObjectId válido, retorne None
+                return None
+        return v
+
+class ClientStatus(str, Enum):
+    LEAD = "LEAD"
+    OPPORTUNITY = "OPPORTUNITY"
+    CUSTOMER = "CUSTOMER"
+    ACTIVE = "ACTIVE"
+    INACTIVE = "INACTIVE"
+
+class RFMScores(BaseModel):
+    recency: int = Field(ge=1, le=5)
+    potential: int = Field(ge=1, le=5)
+    engagement: int = Field(ge=0, le=5)
+    total: int = Field(ge=2, le=15)
+
+    class Config:
+        populate_by_name = True
+
+class Interaction(BaseModel):
+    date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    type: str = "OUTROS"
+    notes: str = ""
+    outcome: Optional[str] = None
+
+    @validator('date')
+    def ensure_timezone(cls, v):
+        if v.tzinfo is None:
+            return v.replace(tzinfo=timezone.utc)
+        return v
+
+    class Config:
+        populate_by_name = True
+
+class Task(BaseModel):
+    title: str = ""
+    due_date: datetime = Field(default_factory=lambda: (datetime.now(timezone.utc) + timedelta(days=7)))
+    status: str = "TODO"
+    description: Optional[str] = None
+
+    @validator('due_date')
+    def ensure_timezone(cls, v):
+        if v.tzinfo is None:
+            return v.replace(tzinfo=timezone.utc)
+        return v
+
+    class Config:
+        populate_by_name = True
+
+class Client(BaseModel):
+    id: Optional[PyObjectId] = Field(default=None, alias='_id')
+    name: str
+    company: str
+    email: EmailStr
+    phone: str = ""
+    status: ClientStatus = ClientStatus.LEAD
+    sales_potential: int = Field(default=3, ge=1, le=5)
+    last_contact: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    next_followup: datetime = Field(default_factory=lambda: (datetime.now(timezone.utc) + timedelta(days=7)))
+    interaction_history: List[Interaction] = []
+    pending_tasks: List[Task] = []
+    rfm_scores: Optional[RFMScores] = None
+    user_id: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    @validator('last_contact', 'next_followup', 'created_at', 'updated_at')
+    def ensure_timezone(cls, v):
+        if v and v.tzinfo is None:
+            return v.replace(tzinfo=timezone.utc)
+        return v
+
+    class Config:
+        populate_by_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {
+            datetime: lambda v: v.isoformat(),
+            ObjectId: str
+        }
+        use_enum_values = True
+
+# Criar uma nova classe para criação de cliente sem campo id
+class ClientCreate(BaseModel):
+    name: str
+    company: str
+    email: EmailStr
+    phone: str = ""
+    status: ClientStatus = ClientStatus.LEAD
+    sales_potential: int = Field(default=3, ge=1, le=5)
+    last_contact: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    next_followup: datetime = Field(default_factory=lambda: (datetime.now(timezone.utc) + timedelta(days=7)))
+    interaction_history: List[Interaction] = []
+    pending_tasks: List[Task] = []
+    user_id: Optional[str] = None
+
+    @validator('last_contact', 'next_followup')
+    def ensure_timezone(cls, v):
+        if v and v.tzinfo is None:
+            return v.replace(tzinfo=timezone.utc)
+        return v
+
+    class Config:
+        populate_by_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {
+            datetime: lambda v: v.isoformat(),
+            ObjectId: str
+        }
+        use_enum_values = True 
