@@ -66,7 +66,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 "/auth/verify-email",
                 "/calendar/google/callback",
                 "/landing"
-                "/scripts/fix_tasks_without_user.py"  # Adicionando landing como rota pública
             ]
             
             # Se for um caminho público, ignora completamente a verificação
