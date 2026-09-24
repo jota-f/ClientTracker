@@ -24,10 +24,12 @@ GOOGLE_API_URL = "https://www.googleapis.com/calendar/v3"
 
 
 
-# Obter credenciais do ambiente
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "754743042879-rk3m7tlqcrgvpaunm6qf7smcv0sm182f.apps.googleusercontent.com")
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "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")
-GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "https://pgs.app.br:8000/calendar/google/callback")
+from app.core.config import settings
+
+# Obter credenciais do ambiente / settings
+GOOGLE_CLIENT_ID = settings.GOOGLE_CLIENT_ID or os.getenv("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = settings.GOOGLE_CLIENT_SECRET or os.getenv("GOOGLE_CLIENT_SECRET", "")
+GOOGLE_REDIRECT_URI = settings.GOOGLE_REDIRECT_URI or os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/calendar/google/callback")
 
 
 # Diretório para armazenar arquivos temporários
