@@ -9,7 +9,7 @@ import logging
 from datetime import datetime, timezone, timedelta
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
+from app.core.templates import templates
 logger = logging.getLogger(__name__)
 
 @router.get("/", response_model=List[Client])

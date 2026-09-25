@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/calendar", tags=["calendar_web"])
 
 # Templates
-templates = Jinja2Templates(directory="app/templates")
+from app.core.templates import templates
 
 # Rotas para Google Calendar
 @router.get("/google/auth")

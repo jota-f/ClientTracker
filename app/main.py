@@ -142,7 +142,7 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Configure templates
-templates = Jinja2Templates(directory="app/templates")
+from app.core.templates import templates
 
 # Events
 @app.on_event("startup")
