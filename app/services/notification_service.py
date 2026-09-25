@@ -1,3 +1,4 @@
+import asyncio
 import os
 import smtplib
 import logging
@@ -16,6 +17,10 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 class NotificationService:
+    # Circuit breaker global para evitar travamento se a porta SMTP estiver bloqueada na nuvem
+    _smtp_reachable: bool = True
+    _last_failure_time: Optional[datetime] = None
+
     def __init__(self):
         self.user_service = UserService()
         
@@ -42,40 +47,57 @@ class NotificationService:
             if not self.smtp_server: missing.append("MAIL_SERVER")
             if not self.smtp_port: missing.append("MAIL_PORT")
             logger.error(f"Configurações de email incompletas. Faltando: {', '.join(missing)}")
-    
-    async def send_email(self, to_email: str, subject: str, html_content: str) -> bool:
-        """Enviar e-mail usando SMTP"""
+
+    def _send_email_sync(self, to_email: str, subject: str, html_content: str) -> bool:
+        """Execução síncrona do envio de e-mail com timeout estrito de 4s em thread isolada."""
+        now = datetime.now(timezone.utc)
+        # Se a rede foi marcada como inacessível nos últimos 15 minutos, não trava a aplicação
+        if not NotificationService._smtp_reachable and NotificationService._last_failure_time:
+            if (now - NotificationService._last_failure_time).total_seconds() < 900:
+                logger.debug("SMTP circuit-breaker ativo: ignorando tentativa de envio enquanto a rede estiver inalcançável.")
+                return False
+            else:
+                NotificationService._smtp_reachable = True
+
+        msg = MIMEMultipart()
+        msg['From'] = self.email_sender
+        msg['To'] = to_email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(html_content, 'html'))
+
         try:
-            if not all([self.email_sender, self.email_password, self.smtp_server, self.smtp_port]):
-                logger.error("Configurações de email incompletas")
-                return False
-
-            msg = MIMEMultipart()
-            msg['From'] = self.email_sender
-            msg['To'] = to_email
-            msg['Subject'] = subject
-            msg.attach(MIMEText(html_content, 'html'))
-
-            try:
-                with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
+            # Timeout curto de 4s: evita congelar a máquina caso portas SMTP estejam bloqueadas pelo provedor
+            with smtplib.SMTP(self.smtp_server, self.smtp_port, timeout=4.0) as server:
+                server.ehlo()
+                if self.use_tls:
+                    server.starttls()
                     server.ehlo()
-                    if self.use_tls:
-                        server.starttls()
-                        server.ehlo()
-                    server.login(self.email_sender, self.email_password)
-                    server.send_message(msg)
-                    logger.info(f"Email enviado com sucesso para {to_email}")
-                    return True
-            except smtplib.SMTPAuthenticationError as auth_error:
-                logger.error(f"Erro de autenticação SMTP: {str(auth_error)}")
-                return False
-            except smtplib.SMTPException as smtp_error:
-                logger.error(f"Erro SMTP: {str(smtp_error)}")
-                return False
-
-        except Exception as e:
-            logger.error(f"Erro ao enviar e-mail: {str(e)}")
+                server.login(self.email_sender, self.email_password)
+                server.send_message(msg)
+                logger.info(f"Email enviado com sucesso para {to_email}")
+                NotificationService._smtp_reachable = True
+                return True
+        except (OSError, smtplib.SMTPException, TimeoutError) as net_err:
+            err_str = str(net_err)
+            if "Network is unreachable" in err_str or "101" in err_str or "timed out" in err_str:
+                logger.warning(f"SMTP inacessível no ambiente atual (porta {self.smtp_port} bloqueada ou sem rota): {err_str}. Circuit breaker ativado.")
+                NotificationService._smtp_reachable = False
+                NotificationService._last_failure_time = now
+            else:
+                logger.error(f"Erro ao enviar e-mail via SMTP: {err_str}")
             return False
+        except Exception as e:
+            logger.error(f"Erro inesperado no envio de e-mail: {str(e)}")
+            return False
+
+    async def send_email(self, to_email: str, subject: str, html_content: str) -> bool:
+        """Enviar e-mail de forma assíncrona sem travar o event loop do FastAPI."""
+        if not all([self.email_sender, self.email_password, self.smtp_server, self.smtp_port]):
+            logger.error("Configurações de email incompletas")
+            return False
+
+        # Roda em thread separada com asyncio.to_thread para manter o servidor web 100% responsivo
+        return await asyncio.to_thread(self._send_email_sync, to_email, subject, html_content)
     
     async def send_task_reminder(self, task_id: str) -> bool:
         """Enviar lembrete para uma tarefa específica"""

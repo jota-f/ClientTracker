@@ -50,9 +50,11 @@ async def process_notifications():
 
 async def start_notification_job():
     """
-    Inicia o job de processamento de notificações
-    Executa a cada 1 hora
+    Inicia o job de processamento de notificações em segundo plano.
+    Executa a cada 1 hora com delay inicial para não competir com a inicialização web.
     """
+    # Aguarda 30 segundos após o boot para que a aplicação responda a requisições imediatamente
+    await asyncio.sleep(30)
     while True:
         await process_notifications()
         await asyncio.sleep(60 * 60)  # 1 hora 
