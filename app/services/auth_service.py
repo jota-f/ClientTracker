@@ -23,8 +23,8 @@ SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 horas
 
-# Log para garantir que estamos usando a mesma SECRET_KEY durante toda a execução
-logger.info(f"Usando SECRET_KEY do arquivo de configuração: {SECRET_KEY[:5]}...")
+# Log para garantir que a chave foi carregada
+logger.info("Chave SECRET_KEY carregada com sucesso das configurações.")
 
 class AuthService:
     @staticmethod
@@ -70,7 +70,7 @@ class AuthService:
             logger.info(f"Tentando decodificar token: {token_prefix}")
             
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-            logger.info(f"Token decodificado com sucesso. Payload: {payload}")
+            logger.info(f"Token decodificado com sucesso para sub: {payload.get('sub')}")
             return payload
         except jwt.ExpiredSignatureError:
             logger.error("Token expirado")

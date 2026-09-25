@@ -120,7 +120,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
             
         except Exception as e:
             logger.error(f"Erro no middleware de autenticação: {str(e)}")
-            return await call_next(request)
+            if request.url.path.startswith('/api/'):
+                return JSONResponse(status_code=401, content={"detail": "Falha na verificação de autenticação"})
+            else:
+                return RedirectResponse(url="/login?error=auth_error", status_code=302)
 
 # Create FastAPI app
 app = FastAPI(
@@ -129,12 +132,16 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
 
-# Configure CORS
+# Configure CORS - Garantir que origins não contém '*' quando allow_credentials=True
+cors_origins = [origin for origin in settings.BACKEND_CORS_ORIGINS if origin != "*"]
+if not cors_origins:
+    cors_origins = [settings.APP_URL, "http://localhost:8000", "http://127.0.0.1:8000"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.BACKEND_CORS_ORIGINS,
+    allow_origins=cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 

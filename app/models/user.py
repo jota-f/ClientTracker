@@ -99,6 +99,10 @@ class User(BaseModel):
             return v.replace(tzinfo=timezone.utc)
         return v
 
+    @property
+    def is_admin(self) -> bool:
+        return self.role == UserRole.ADMIN or str(self.role).lower() == "admin"
+
     model_config = ConfigDict(
         populate_by_name=True,
         json_encoders={
@@ -145,6 +149,19 @@ class UserUpdate(BaseModel):
     full_name: Optional[str] = None
     notification_preference: Optional[NotificationPreference] = None
     notification_settings: Optional[NotificationSettings] = None
+
+class UserProfileUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+    name: Optional[str] = None
+    full_name: Optional[str] = None
+    password: Optional[str] = None
+    notification_preference: Optional[NotificationPreference] = None
+    notification_settings: Optional[NotificationSettings] = None
+
+    model_config = ConfigDict(
+        extra="ignore"
+    )
     
 class PasswordUpdate(BaseModel):
     current_password: str

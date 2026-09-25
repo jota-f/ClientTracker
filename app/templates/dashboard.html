@@ -242,19 +242,30 @@
     
     <!-- Follow-up Timeline -->
     <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-        <h2 class="text-xl font-bold text-gray-800 mb-4">Follow-ups Previstos (Próximas 4 Semanas)</h2>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4">
+            <h2 class="text-xl font-bold text-gray-800">Follow-ups Previstos (Próximas 4 Semanas)</h2>
+            <span class="text-xs text-gray-500 mt-1 sm:mt-0">Contatos agendados distribuídos por semana de calendário</span>
+        </div>
         <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 items-stretch">
-            {% for week in metrics.followup_history %}
-            <div class="flex-1 border border-gray-200 rounded-lg p-4 text-center">
-                <div class="font-medium text-gray-700">Semana {{ week.week }}</div>
-                <div class="text-sm text-gray-500">{{ week.start_date }} - {{ week.end_date }}</div>
+            {% for week in metrics.followup_forecast or metrics.followup_history %}
+            <div class="flex-1 border {% if week.is_current %}border-blue-300 bg-blue-50/40{% else %}border-gray-200 bg-white{% endif %} rounded-lg p-4 text-center transition-all hover:shadow-sm">
+                <div class="font-medium text-gray-700 flex items-center justify-center gap-1.5">
+                    <span>Semana {{ week.week }}</span>
+                    {% if week.is_current %}
+                    <span class="text-[10px] uppercase font-semibold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded-full">Atual</span>
+                    {% endif %}
+                </div>
+                <div class="text-sm text-gray-500 mt-0.5">{{ week.start_date }} - {{ week.end_date }}</div>
                 <div class="text-2xl font-bold mt-2 
                     {% if week.count > 5 %}text-red-600
                     {% elif week.count > 2 %}text-yellow-600
-                    {% else %}text-green-600{% endif %}">
+                    {% elif week.count > 0 %}text-green-600
+                    {% else %}text-gray-400{% endif %}">
                     {{ week.count }}
                 </div>
-                <div class="text-sm text-gray-500">Follow-ups</div>
+                <div class="text-xs text-gray-500 mt-1">
+                    {{ 'Follow-up' if week.count == 1 else 'Follow-ups' }}
+                </div>
             </div>
             {% endfor %}
         </div>

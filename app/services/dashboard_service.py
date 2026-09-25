@@ -62,7 +62,7 @@ class DashboardService:
         - Distribuição de clientes por status
         - Clientes por nível de prioridade (RFM)
         - Distribuição de tarefas por quadrante Eisenhower
-        - Histórico de follow-ups nos últimos 30 dias
+        - Previsão de follow-ups para as próximas 4 semanas
         - Taxa de conversão (leads para clientes)
         """
         # Obter métricas básicas
@@ -126,24 +126,29 @@ class DashboardService:
             count = await Database.database["tasks"].count_documents(status_filter)
             task_status_distribution[status.value] = count
         
-        # Histórico de follow-ups nos últimos 30 dias
-        thirty_days_ago = now - timedelta(days=30)
-        followup_history = []
+        # Previsão de follow-ups para as próximas 4 semanas
+        today = now.date()
+        current_week_start = today - timedelta(days=today.weekday())
+        followup_forecast = []
         
-        # Calculando por semana nos últimos 30 dias
+        # Calculando por semana para as próximas 4 semanas (calendário)
         for week in range(4):
-            week_start = thirty_days_ago + timedelta(days=week*7)
-            week_end = week_start + timedelta(days=7)
+            week_start_date = current_week_start + timedelta(weeks=week)
+            week_end_date = week_start_date + timedelta(days=6)
+            
+            week_start_dt = datetime.combine(week_start_date, datetime.min.time()).replace(tzinfo=timezone.utc)
+            week_end_dt = datetime.combine(week_end_date, datetime.max.time()).replace(tzinfo=timezone.utc)
             
             followup_filter = client_filter.copy()
-            followup_filter["next_followup"] = {"$gte": week_start, "$lt": week_end}
+            followup_filter["next_followup"] = {"$gte": week_start_dt, "$lte": week_end_dt}
             count = await Database.database["clients"].count_documents(followup_filter)
             
-            followup_history.append({
+            followup_forecast.append({
                 "week": week + 1,
+                "is_current": week == 0,
                 "count": count,
-                "start_date": week_start.strftime("%d/%m"),
-                "end_date": week_end.strftime("%d/%m")
+                "start_date": week_start_date.strftime("%d/%m"),
+                "end_date": week_end_date.strftime("%d/%m")
             })
         
         # Taxa de conversão (lead para cliente)
@@ -166,7 +171,8 @@ class DashboardService:
             "rfm_distribution": rfm_distribution,
             "task_priority_distribution": task_priority_distribution,
             "task_status_distribution": task_status_distribution,
-            "followup_history": followup_history,
+            "followup_forecast": followup_forecast,
+            "followup_history": followup_forecast,  # Manter compatibilidade com código legado
             "conversion_rate": conversion_rate
         }
     

@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from bson import ObjectId
 import traceback
 
-from app.models.user import User, UserResponse
+from app.models.user import User, UserResponse, UserProfileUpdate
 from app.services.auth_service import AuthService
 from app.core.dependencies import get_current_user
 from app.models.notification_settings import NotificationSettings
@@ -22,25 +22,57 @@ class NotificationUpdate(BaseModel):
 
 @router.post("/update", response_model=UserResponse)
 async def update_user_profile(
-    user_data: Dict[str, Any] = Body(...),
+    user_update: UserProfileUpdate,
     current_user: User = Depends(get_current_user)
 ) -> UserResponse:
     """
-    Atualiza os dados do usuário autenticado.
+    Atualiza os dados de perfil do usuário autenticado de forma segura,
+    bloqueando qualquer tentativa de mass assignment ou elevação de privilégio.
     """
     try:
-        update_data = {k: v for k, v in user_data.items() if v is not None}
+        raw_data = user_update.model_dump(exclude_unset=True)
         
-        # Se a senha estiver presente, vamos hashear
-        if "password" in update_data and update_data["password"]:
-            hashed_password = AuthService.get_password_hash(update_data["password"])
-            update_data["hashed_password"] = hashed_password
-            del update_data["password"]
+        # Permitir estritamente campos autorizados para edição de perfil
+        allowed_fields = {
+            "username", "email", "full_name", "notification_preference", "notification_settings"
+        }
+        update_data = {}
         
-        # Converter 'name' para 'full_name' se presente
-        if "name" in update_data:
-            update_data["full_name"] = update_data.pop("name")
-        
+        # Converter 'name' para 'full_name' se fornecido
+        if "name" in raw_data and raw_data["name"] is not None:
+            update_data["full_name"] = raw_data["name"]
+        if "full_name" in raw_data and raw_data["full_name"] is not None:
+            update_data["full_name"] = raw_data["full_name"]
+            
+        for field in ["username", "email", "notification_preference", "notification_settings"]:
+            if field in raw_data and raw_data[field] is not None:
+                update_data[field] = raw_data[field]
+                
+        # Tratar senha com hash seguro se fornecida
+        if raw_data.get("password"):
+            update_data["hashed_password"] = AuthService.get_password_hash(raw_data["password"])
+            
+        # Assegurar explicitamente que nenhum campo de privilégio é injetado
+        for forbidden in ["role", "is_admin", "is_active", "email_verified", "id", "_id"]:
+            update_data.pop(forbidden, None)
+            
+        if not update_data:
+            # Nada a atualizar, retorna o usuário atual
+            return UserResponse(
+                id=current_user.id,
+                username=current_user.username,
+                email=current_user.email,
+                full_name=current_user.full_name,
+                role=current_user.role,
+                notification_preference=current_user.notification_preference,
+                calendar_integration=current_user.calendar_integration,
+                email_verified=current_user.email_verified,
+                is_active=current_user.is_active,
+                created_at=current_user.created_at,
+                updated_at=current_user.updated_at,
+                last_login=current_user.last_login
+            )
+
         updated_user = await AuthService.update_user(current_user.id, update_data)
         
         if not updated_user:

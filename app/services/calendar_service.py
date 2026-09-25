@@ -1,5 +1,5 @@
 import os
-
+import re
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any, List
@@ -70,20 +70,24 @@ class CalendarService:
         try:
             logger.info(f"Iniciando handle_google_callback com código {code[:10]}... e estado {state}")
             
+            # Validação estrita contra Path Traversal e injeção de parâmetros
+            if not state or not re.match(r"^[A-Za-z0-9_-]{16,64}$", state):
+                logger.error(f"Formato de estado OAuth inválido ou malicioso detectado: {state}")
+                raise HTTPException(status_code=400, detail="Estado inválido ou corrompido")
+            
             try:
-                # Verificar se o arquivo de estado existe
-                state_file_path = f"tmp/{state}.json"
+                # Verificar se o arquivo de estado existe e permanece canonicamente restrito a TMP_DIR
+                base_dir = os.path.abspath(TMP_DIR)
+                state_file_path = os.path.abspath(os.path.join(base_dir, f"{state}.json"))
+                
+                if not state_file_path.startswith(base_dir + os.sep):
+                    logger.error(f"Tentativa de Path Traversal bloqueada no OAuth: {state}")
+                    raise HTTPException(status_code=400, detail="Acesso não autorizado ao caminho de estado")
+                
                 logger.info(f"Verificando arquivo de estado: {state_file_path}")
                 
                 if not os.path.exists(state_file_path):
                     logger.error(f"Arquivo de estado não encontrado: {state_file_path}")
-                    # Listar arquivos no diretório tmp para debug
-                    try:
-                        tmp_files = os.listdir("tmp")
-                        logger.info(f"Arquivos em tmp/: {tmp_files}")
-                    except Exception as list_err:
-                        logger.error(f"Erro ao listar arquivos em tmp/: {str(list_err)}")
-                    
                     raise HTTPException(status_code=400, detail="Estado inválido ou expirado")
                 
                 logger.info(f"Arquivo de estado encontrado, carregando dados")
@@ -97,7 +101,7 @@ class CalendarService:
                 
                 logger.info(f"Estado válido, user_id encontrado: {user_id}")
                 
-                # Remover o arquivo de estado após o uso
+                # Remover o arquivo de estado após o uso de forma segura
                 try:
                     os.remove(state_file_path)
                     logger.info(f"Arquivo de estado removido: {state_file_path}")
@@ -105,7 +109,7 @@ class CalendarService:
                     logger.warning(f"Erro ao remover arquivo de estado: {str(rm_err)}")
                 
             except FileNotFoundError:
-                logger.error(f"Arquivo de estado não encontrado: tmp/{state}.json")
+                logger.error(f"Arquivo de estado não encontrado: {state}")
                 raise HTTPException(status_code=400, detail="Estado inválido ou expirado")
             except json.JSONDecodeError as json_err:
                 logger.error(f"Erro ao decodificar JSON do arquivo de estado: {str(json_err)}")

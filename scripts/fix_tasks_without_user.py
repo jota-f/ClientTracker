@@ -2,6 +2,7 @@
 import asyncio
 import sys
 import os
+import re
 import logging
 from datetime import datetime
 from bson import ObjectId
@@ -26,7 +27,8 @@ async def connect_to_mongo():
     
     mongo_client = AsyncIOMotorClient(settings.MONGODB_URL)
     db = mongo_client.get_default_database()
-    logger.info(f"Conectado ao MongoDB: {settings.MONGODB_URL}")
+    sanitized_url = re.sub(r"://([^:]+):([^@]+)@", r"://\1:******@", settings.MONGODB_URL)
+    logger.info(f"Conectado ao MongoDB: {sanitized_url}")
     return db
 
 async def identify_tasks_without_user():

@@ -57,15 +57,7 @@ class EmailVerificationService:
             user = await self.db["users"].find_one({"verification_token": token})
 
             if not user:
-                logger.warning(f"Token de verificação não encontrado: {token[:10]}...")
-                all_users = await self.db["users"].find({
-                    "verification_token": {"$ne": None}
-                }).to_list(length=100)
-
-                if all_users:
-                    tokens = [u.get("verification_token", "")[:10] for u in all_users]
-                    logger.debug(f"Tokens ativos no sistema: {tokens}")
-
+                logger.warning("Token de verificação não encontrado ou inválido")
                 return False
 
             logger.info(f"Usuário encontrado: {user.get('email')} para token: {token[:10]}...")
