@@ -7,7 +7,7 @@ from fastapi.security import OAuth2PasswordBearer
 from starlette.middleware.base import BaseHTTPMiddleware
 from app.core.config import settings
 from app.core.database import connect_to_mongo, close_mongo_connection
-from app.api.routes import clients, tasks, auth, calendar, notification, users
+from app.api.routes import clients, tasks, auth, calendar, notification, users, public, admin
 from app.routers import calendar_router
 from app.models.client import Client
 from app.models.task import Task, TaskStatus, TaskPriority
@@ -18,7 +18,7 @@ from app.services.dashboard_service import DashboardService
 from app.services.auth_service import AuthService
 from app.services.scheduler_service import SchedulerService
 from app.services.notification_service import NotificationService
-from app.core.dependencies import get_current_user, get_optional_user
+from app.core.dependencies import get_current_user, get_optional_user, get_admin_user
 import logging
 from datetime import datetime, timezone, timedelta
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -65,7 +65,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 "/auth/verification-pending",
                 "/auth/verify-email",
                 "/calendar/google/callback",
-                "/landing"
+                "/landing",
+                "/api/v1/public"
             ]
             
             # Se for um caminho público, ignora completamente a verificação
@@ -242,6 +243,24 @@ app.include_router(
     tags=["notifications"]
 )
 
+app.include_router(
+    public.router,
+    prefix="/api/v1/public",
+    tags=["public"]
+)
+
+app.include_router(
+    admin.router,
+    prefix="/api/v1/admin",
+    tags=["admin"]
+)
+
+app.include_router(
+    admin.router,
+    prefix="/api/admin",
+    tags=["admin-compat"]
+)
+
 # Incluir roteadores web
 app.include_router(calendar_router.router)
 
@@ -260,7 +279,8 @@ async def index(request: Request, current_user: User = Depends(get_current_user)
     context = {
         "request": request,
         "metrics": metrics,
-        "user": current_user
+        "user": current_user,
+        "is_admin": current_user.is_admin
     }
     return templates.TemplateResponse("dashboard.html", context)
 
@@ -273,7 +293,8 @@ async def advanced_dashboard(request: Request, current_user: User = Depends(get_
     context = {
         "request": request,
         "metrics": metrics,
-        "user": current_user
+        "user": current_user,
+        "is_admin": current_user.is_admin
     }
     return templates.TemplateResponse("dashboard.html", context)
 
@@ -302,6 +323,14 @@ async def register_page(request: Request):
 @app.get("/landing")
 async def landing_page(request: Request):
     return templates.TemplateResponse("landing.html", {"request": request})
+
+@app.get("/invites")
+async def invites_page(request: Request, current_user: User = Depends(get_current_user)):
+    return templates.TemplateResponse("invites.html", {"request": request, "user": current_user, "is_admin": current_user.is_admin})
+
+@app.get("/admin/invite-requests")
+async def admin_invite_requests_page(request: Request, current_user: User = Depends(get_admin_user)):
+    return templates.TemplateResponse("admin/invite_requests.html", {"request": request, "user": current_user, "is_admin": True})
 
 @app.get("/profile")
 async def profile_page(request: Request, current_user: User = Depends(get_current_user)):

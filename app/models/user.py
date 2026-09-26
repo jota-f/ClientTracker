@@ -112,11 +112,30 @@ class User(BaseModel):
         use_enum_values=True
     )
 
+class InviteCode(BaseModel):
+    code: str
+    created_by: str
+    email: Optional[str] = None
+    used: bool = False
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    expires_at: datetime
+    used_at: Optional[datetime] = None
+    used_by: Optional[str] = None
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+        json_encoders={
+            datetime: lambda v: v.isoformat(),
+            ObjectId: str
+        }
+    )
+
 class UserCreate(BaseModel):
     username: str
     email: EmailStr
     password: str
     full_name: Optional[str] = None
+    invite_code: Optional[str] = None
     
 class UserLogin(BaseModel):
     email: EmailStr

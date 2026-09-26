@@ -1,0 +1,585 @@
+{% extends "base.html" %}
+
+{% block title %}Gestão de Solicitações de Convites{% endblock %}
+
+{% block content %}
+<!-- Toast notifications container -->
+<div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Solicitações de Convites</h1>
+            <p class="text-sm text-gray-600 mt-1">Gerencie as solicitações de acesso ao sistema</p>
+        </div>
+        <div class="flex items-center space-x-2">
+            <select id="status-filter" class="bg-white border border-gray-300 rounded-md px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                <option value="">Todos os status</option>
+                <option value="pending">Pendentes</option>
+                <option value="approved">Aprovados</option>
+                <option value="rejected">Rejeitados</option>
+            </select>
+            <button id="refresh-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm transition-colors duration-200 flex items-center">
+                <svg id="refresh-icon" class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                Atualizar
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats cards -->
+    <div id="stats-cards" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+            <div class="flex items-center">
+                <div class="p-2 bg-yellow-100 rounded-lg">
+                    <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Pendentes</p>
+                    <p id="pending-count" class="text-2xl font-bold text-gray-900">0</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+            <div class="flex items-center">
+                <div class="p-2 bg-green-100 rounded-lg">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Aprovados</p>
+                    <p id="approved-count" class="text-2xl font-bold text-gray-900">0</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+            <div class="flex items-center">
+                <div class="p-2 bg-red-100 rounded-lg">
+                    <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Rejeitados</p>
+                    <p id="rejected-count" class="text-2xl font-bold text-gray-900">0</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+            <div class="flex items-center">
+                <div class="p-2 bg-blue-100 rounded-lg">
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Total</p>
+                    <p id="total-count" class="text-2xl font-bold text-gray-900">0</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading indicator -->
+    <div id="loading-indicator" class="hidden flex justify-center items-center py-8">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        <span class="ml-2 text-gray-600">Carregando solicitações...</span>
+    </div>
+
+    <div class="bg-white shadow-md rounded-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Empresa</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="requests-table-body" class="bg-white divide-y divide-gray-200">
+                    <!-- Conteúdo será preenchido via JavaScript -->
+                    <tr>
+                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">Carregando solicitações...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para processamento de solicitações -->
+<div id="process-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4 shadow-xl">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold text-gray-900">Processar Solicitação</h2>
+            <button id="modal-close-x" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+            <p class="text-sm text-gray-600 mb-1">Solicitação de:</p>
+            <p class="font-medium text-gray-900" id="modal-name"></p>
+            <p class="text-indigo-600 text-sm" id="modal-email"></p>
+            <p class="text-sm text-gray-600 mt-2" id="modal-company"></p>
+        </div>
+        
+        <div class="space-y-4">
+            <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="status">
+                    Decisão *
+                </label>
+                <select id="modal-status" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="approved">✅ Aprovar Solicitação</option>
+                    <option value="rejected">❌ Rejeitar Solicitação</option>
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="notes">
+                    Observações
+                </label>
+                <textarea id="modal-notes" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" rows="3" placeholder="Adicione observações sobre sua decisão (opcional)"></textarea>
+            </div>
+            
+            <div id="create-invite-option" class="bg-green-50 p-3 rounded-lg">
+                <label class="flex items-center">
+                    <input type="checkbox" id="modal-create-invite" class="mr-3 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                    <div>
+                        <span class="text-sm font-medium text-gray-900">Criar código de convite automaticamente</span>
+                        <p class="text-xs text-gray-600">Um código de convite será gerado e enviado junto com a notificação de aprovação</p>
+                    </div>
+                </label>
+            </div>
+        </div>
+        
+        <div class="flex justify-end space-x-3 mt-8">
+            <button id="modal-cancel" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors duration-200">
+                Cancelar
+            </button>
+            <button id="modal-save" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors duration-200 flex items-center">
+                <span id="modal-save-text">Processar Solicitação</span>
+                <svg id="modal-save-loading" class="hidden animate-spin ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirmation-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
+        <div class="flex items-center mb-4">
+            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100">
+                <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                </svg>
+            </div>
+        </div>
+        <div class="text-center">
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Confirmar Ação</h3>
+            <p id="confirmation-message" class="text-sm text-gray-500 mb-4"></p>
+            <div class="flex justify-center space-x-3">
+                <button id="confirmation-cancel" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors text-sm">
+                    Cancelar
+                </button>
+                <button id="confirmation-confirm" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-sm">
+                    Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentRequestId = null;
+    let currentRequestData = null;
+
+    // Toast notification system
+    function showToast(message, type = 'info', duration = 5000) {
+        const toast = document.createElement('div');
+        const icons = {
+            success: '✅',
+            error: '❌',
+            warning: '⚠️',
+            info: 'ℹ️'
+        };
+        
+        const colors = {
+            success: 'bg-green-100 border-green-400 text-green-700',
+            error: 'bg-red-100 border-red-400 text-red-700',
+            warning: 'bg-yellow-100 border-yellow-400 text-yellow-700',
+            info: 'bg-blue-100 border-blue-400 text-blue-700'
+        };
+        
+        toast.className = `${colors[type]} border-l-4 p-4 rounded-md shadow-md transition-all duration-300 transform translate-x-full opacity-0`;
+        toast.innerHTML = `
+            <div class="flex items-center">
+                <span class="mr-2">${icons[type]}</span>
+                <span class="text-sm font-medium">${message}</span>
+                <button onclick="this.parentElement.parentElement.remove()" class="ml-auto text-gray-400 hover:text-gray-600">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        `;
+        
+        document.getElementById('toast-container').appendChild(toast);
+        
+        // Animate in
+        setTimeout(() => {
+            toast.classList.remove('translate-x-full', 'opacity-0');
+        }, 100);
+        
+        // Auto remove
+        setTimeout(() => {
+            toast.classList.add('translate-x-full', 'opacity-0');
+            setTimeout(() => toast.remove(), 300);
+        }, duration);
+    }
+
+    // Loading state management
+    function setLoading(isLoading) {
+        const indicator = document.getElementById('loading-indicator');
+        const table = document.querySelector('.bg-white.shadow-md');
+        const refreshBtn = document.getElementById('refresh-btn');
+        const refreshIcon = document.getElementById('refresh-icon');
+        
+        if (isLoading) {
+            indicator.classList.remove('hidden');
+            table.style.opacity = '0.6';
+            refreshBtn.disabled = true;
+            refreshIcon.classList.add('animate-spin');
+        } else {
+            indicator.classList.add('hidden');
+            table.style.opacity = '1';
+            refreshBtn.disabled = false;
+            refreshIcon.classList.remove('animate-spin');
+        }
+    }
+
+    // Update stats cards
+    function updateStats(requests) {
+        const stats = {
+            pending: requests.filter(r => r.status === 'pending').length,
+            approved: requests.filter(r => r.status === 'approved').length,
+            rejected: requests.filter(r => r.status === 'rejected').length,
+            total: requests.length
+        };
+        
+        document.getElementById('pending-count').textContent = stats.pending;
+        document.getElementById('approved-count').textContent = stats.approved;
+        document.getElementById('rejected-count').textContent = stats.rejected;
+        document.getElementById('total-count').textContent = stats.total;
+    }
+
+    // Carregar solicitações ao iniciar a página
+    document.addEventListener('DOMContentLoaded', () => {
+        loadInviteRequests();
+        
+        // Configurar filtro
+        document.getElementById('status-filter').addEventListener('change', loadInviteRequests);
+        
+        // Configurar botão de atualização
+        document.getElementById('refresh-btn').addEventListener('click', loadInviteRequests);
+        
+        // Configurar modal
+        document.getElementById('modal-cancel').addEventListener('click', closeModal);
+        document.getElementById('modal-close-x').addEventListener('click', closeModal);
+        document.getElementById('modal-save').addEventListener('click', showConfirmation);
+        document.getElementById('modal-status').addEventListener('change', function() {
+            // Mostrar opção de criar convite apenas para aprovações
+            const createInviteOption = document.getElementById('create-invite-option');
+            createInviteOption.style.display = this.value === 'approved' ? 'block' : 'none';
+        });
+        
+        // Configurar modal de confirmação
+        document.getElementById('confirmation-cancel').addEventListener('click', closeConfirmation);
+        document.getElementById('confirmation-confirm').addEventListener('click', processRequest);
+        
+        // Close modals on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+                closeConfirmation();
+            }
+        });
+    });
+
+    // Função para carregar as solicitações de convite
+    async function loadInviteRequests() {
+        const statusFilter = document.getElementById('status-filter').value;
+        const tableBody = document.getElementById('requests-table-body');
+        
+        setLoading(true);
+        
+        try {
+            // Usar rota correta - tentando ambas as versões para compatibilidade
+            const url = `/api/v1/admin/invite-requests${statusFilter ? `?status_filter=${statusFilter}` : ''}`;
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                    'Cache-Control': 'no-cache'
+                }
+            });
+            
+            if (!response.ok) {
+                if (response.status === 401) {
+                    showToast('Sessão expirada. Redirecionando para login...', 'error');
+                    setTimeout(() => window.location.href = '/login', 2000);
+                    return;
+                }
+                throw new Error(`Erro ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            
+            // Atualizar estatísticas
+            updateStats(data.invite_requests);
+            
+            // Limpar tabela
+            tableBody.innerHTML = '';
+            
+            if (data.invite_requests.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                            <div class="flex flex-col items-center py-8">
+                                <svg class="w-12 h-12 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2M4 13h2m8-8v2m0 6v2"></path>
+                                </svg>
+                                <p>Nenhuma solicitação encontrada</p>
+                                ${statusFilter ? '<p class="text-sm">Tente alterar o filtro para ver mais solicitações</p>' : ''}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            // Popular tabela
+            data.invite_requests.forEach(request => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50 transition-colors';
+                
+                // Formatar data
+                const date = new Date(request.created_at);
+                const formattedDate = `${date.toLocaleDateString('pt-BR')} ${date.toLocaleTimeString('pt-BR').substring(0, 5)}`;
+                
+                // Definir classe de status
+                let statusClass = '';
+                let statusText = '';
+                if (request.status === 'pending') {
+                    statusClass = 'bg-yellow-100 text-yellow-800';
+                    statusText = '⏳ Pendente';
+                } else if (request.status === 'approved') {
+                    statusClass = 'bg-green-100 text-green-800';
+                    statusText = '✅ Aprovado';
+                } else if (request.status === 'rejected') {
+                    statusClass = 'bg-red-100 text-red-800';
+                    statusText = '❌ Rejeitado';
+                }
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${request.name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${request.email}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${request.company}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formattedDate}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">
+                            ${statusText}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${request.status === 'pending' ? 
+                            `<button 
+                                class="text-indigo-600 hover:text-indigo-900 process-btn bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded-md transition-colors" 
+                                data-id="${request.id}" 
+                                data-name="${request.name}" 
+                                data-email="${request.email}"
+                                data-company="${request.company}"
+                            >
+                                📝 Processar
+                            </button>` : 
+                            `<div class="text-sm">
+                                <span class="text-gray-600" title="${request.notes || 'Sem observações'}">
+                                    Processado ${request.processed_at ? `em ${new Date(request.processed_at).toLocaleDateString('pt-BR')}` : ''}
+                                </span>
+                                ${request.notes ? `<br><span class="text-xs text-gray-500" title="${request.notes}">💬 ${request.notes.substring(0, 50)}${request.notes.length > 50 ? '...' : ''}</span>` : ''}
+                            </div>`
+                        }
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+            
+            // Adicionar event listeners aos botões de processamento
+            document.querySelectorAll('.process-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    openProcessModal(
+                        this.getAttribute('data-id'),
+                        this.getAttribute('data-name'),
+                        this.getAttribute('data-email'),
+                        this.getAttribute('data-company')
+                    );
+                });
+            });
+            
+            showToast(`${data.invite_requests.length} solicitações carregadas com sucesso`, 'success', 3000);
+            
+        } catch (error) {
+            console.error('Erro:', error);
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="px-6 py-4 text-center text-red-500">
+                        <div class="flex flex-col items-center py-8">
+                            <svg class="w-12 h-12 text-red-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <p class="font-medium">Erro ao carregar solicitações</p>
+                            <p class="text-sm">${error.message}</p>
+                            <button onclick="loadInviteRequests()" class="mt-2 text-indigo-600 hover:text-indigo-900 text-sm">
+                                🔄 Tentar novamente
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            showToast(`Erro ao carregar solicitações: ${error.message}`, 'error');
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    // Abrir modal de processamento
+    function openProcessModal(id, name, email, company) {
+        currentRequestId = id;
+        currentRequestData = { id, name, email, company };
+        
+        document.getElementById('modal-name').textContent = name;
+        document.getElementById('modal-email').textContent = email;
+        document.getElementById('modal-company').textContent = `Empresa: ${company}`;
+        document.getElementById('modal-status').value = 'approved';
+        document.getElementById('modal-notes').value = '';
+        document.getElementById('modal-create-invite').checked = true;
+        document.getElementById('create-invite-option').style.display = 'block';
+        
+        document.getElementById('process-modal').classList.remove('hidden');
+        // Focus no primeiro campo
+        setTimeout(() => document.getElementById('modal-status').focus(), 100);
+    }
+
+    // Fechar modal
+    function closeModal() {
+        document.getElementById('process-modal').classList.add('hidden');
+        currentRequestId = null;
+        currentRequestData = null;
+    }
+
+    // Mostrar confirmação
+    function showConfirmation() {
+        if (!currentRequestId || !currentRequestData) return;
+        
+        const status = document.getElementById('modal-status').value;
+        const action = status === 'approved' ? 'aprovar' : 'rejeitar';
+        const createInvite = status === 'approved' && document.getElementById('modal-create-invite').checked;
+        
+        let message = `Tem certeza que deseja ${action} a solicitação de ${currentRequestData.name}?`;
+        if (createInvite) {
+            message += '\n\nUm código de convite será criado automaticamente.';
+        }
+        
+        document.getElementById('confirmation-message').textContent = message;
+        document.getElementById('confirmation-modal').classList.remove('hidden');
+    }
+
+    // Fechar confirmação
+    function closeConfirmation() {
+        document.getElementById('confirmation-modal').classList.add('hidden');
+    }
+
+    // Processar solicitação
+    async function processRequest() {
+        if (!currentRequestId) return;
+        
+        closeConfirmation();
+        
+        const status = document.getElementById('modal-status').value;
+        const notes = document.getElementById('modal-notes').value.trim();
+        const createInvite = document.getElementById('modal-create-invite').checked;
+        
+        // Mostrar loading no botão
+        const saveBtn = document.getElementById('modal-save');
+        const saveText = document.getElementById('modal-save-text');
+        const saveLoading = document.getElementById('modal-save-loading');
+        
+        saveBtn.disabled = true;
+        saveText.textContent = 'Processando...';
+        saveLoading.classList.remove('hidden');
+        
+        try {
+            const response = await fetch(`/api/v1/admin/invite-requests/${currentRequestId}/process`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                },
+                body: JSON.stringify({
+                    status,
+                    notes: notes || null,
+                    create_invite: status === 'approved' ? createInvite : false
+                }),
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Erro ao processar solicitação');
+            }
+            
+            const data = await response.json();
+            
+            // Mostrar resultado
+            let message = `Solicitação ${status === 'approved' ? 'aprovada' : 'rejeitada'} com sucesso!`;
+            if (data.invite_code) {
+                message += `\n\n🎫 Código de convite criado: ${data.invite_code}`;
+                
+                // Copiar código para clipboard
+                try {
+                    await navigator.clipboard.writeText(data.invite_code);
+                    message += '\n(Código copiado para área de transferência)';
+                } catch (e) {
+                    // Fallback se clipboard não estiver disponível
+                    console.log('Não foi possível copiar para clipboard');
+                }
+            }
+            
+            showToast(message, 'success', 8000);
+            
+            closeModal();
+            loadInviteRequests();
+            
+        } catch (error) {
+            console.error('Erro:', error);
+            showToast(`Erro ao processar solicitação: ${error.message}`, 'error');
+        } finally {
+            // Restaurar botão
+            saveBtn.disabled = false;
+            saveText.textContent = 'Processar Solicitação';
+            saveLoading.classList.add('hidden');
+        }
+    }
+</script>
+{% endblock %} 

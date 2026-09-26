@@ -153,6 +153,14 @@
                             </svg>
                             Calendário
                         </a>
+                        {% if user and (user.is_admin or user.role == 'admin') %}
+                        <a href="/admin/invite-requests" class="border-transparent text-purple-600 hover:border-purple-300 hover:text-purple-800 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                            Admin Convites
+                        </a>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="sm:ml-6 sm:flex sm:items-center">
@@ -175,6 +183,10 @@
                                 </button>
                                 <div class="hidden origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="user-menu">
                                     <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Perfil</a>
+                                    {% if user and (user.is_admin or user.role == 'admin') %}
+                                    <a href="/admin/invite-requests" class="block px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 font-medium" role="menuitem">Solicitações de Convite</a>
+                                    <a href="/invites" class="block px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 font-medium" role="menuitem">Gerenciar Convites</a>
+                                    {% endif %}
                                     <a href="#" id="logout-button" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Sair</a>
                                 </div>
                             </div>

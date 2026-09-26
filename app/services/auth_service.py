@@ -145,6 +145,13 @@ class AuthService:
                 else:
                     raise ValueError("Nome de usuário já existe")
             
+            # Validação do código de convite
+            if hasattr(user_create, 'invite_code') and user_create.invite_code:
+                from app.services.invite_service import InviteService
+                is_valid = await InviteService.validate_invite_code(user_create.invite_code, user_create.email)
+                if not is_valid:
+                    raise ValueError("Código de convite inválido ou expirado")
+
             # Gerar token de verificação
             verification_token = secrets.token_urlsafe(32)
             verification_expires = datetime.now(timezone.utc) + timedelta(hours=24)
@@ -174,6 +181,11 @@ class AuthService:
             
             logger.info(f"Inserindo novo usuário no banco: {user_create.email}")
             result = await Database.database["users"].insert_one(user_dict)
+            
+            # Marca o código de convite como usado se fornecido
+            if hasattr(user_create, 'invite_code') and user_create.invite_code:
+                from app.services.invite_service import InviteService
+                await InviteService.use_invite_code(user_create.invite_code, str(result.inserted_id))
             
             # Retorna o usuário criado (sem a senha)
             created_user = await Database.database["users"].find_one({"_id": result.inserted_id})

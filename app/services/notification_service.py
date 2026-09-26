@@ -662,4 +662,42 @@ class NotificationService:
             error_msg = f"Erro ao processar lembretes de tarefas: {str(e)}"
             logger.error(error_msg)
             results["errors"].append(error_msg)
-            return results 
+            return results
+
+    async def send_invite_code_email(self, email: str, name: str, invite_code: str, company: str = None) -> bool:
+        """Envia email com código de convite para novo usuário"""
+        try:
+            logger.info(f"Enviando email de convite para {email} com código {invite_code}")
+            register_url = f"{settings.APP_URL}/register?invite={invite_code}"
+            company_text = f" da {company}" if company else ""
+            
+            subject = "🎉 Seu convite para o ClientTracker foi aprovado!"
+            html_content = f"""
+            <html>
+                <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                    <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
+                        <div style="background: linear-gradient(135deg, #4a6da7, #5a7db7); color: white; padding: 25px 20px; text-align: center; border-radius: 8px 8px 0 0;">
+                            <h1 style="margin: 0; font-size: 24px;">🎉 Bem-vindo ao ClientTracker!</h1>
+                            <p style="margin: 5px 0 0 0;">Sua solicitação de acesso foi aprovada</p>
+                        </div>
+                        <div style="padding: 25px 20px;">
+                            <p>Olá <strong>{name}</strong>{company_text},</p>
+                            <p>Parabéns! Sua solicitação de acesso ao ClientTracker foi <strong>aprovada</strong>!</p>
+                            <div style="background-color: #f8f9fa; border: 2px solid #4a6da7; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
+                                <h3 style="margin-top: 0; color: #4a6da7;">Seu Código de Convite</h3>
+                                <div style="font-size: 24px; font-weight: bold; color: #4a6da7; letter-spacing: 2px; font-family: monospace;">{invite_code}</div>
+                                <p style="margin-bottom: 0; font-size: 14px; color: #666;">Use este código para criar sua conta</p>
+                            </div>
+                            <div style="text-align: center; margin: 25px 0;">
+                                <a href="{register_url}" style="background-color: #4a6da7; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Criar Minha Conta Agora</a>
+                            </div>
+                            <p style="font-size: 12px; color: #666;">Se o botão não funcionar, copie e cole o link a seguir no seu navegador:<br><a href="{register_url}">{register_url}</a></p>
+                        </div>
+                    </div>
+                </body>
+            </html>
+            """
+            return await self.send_email(email, subject, html_content)
+        except Exception as e:
+            logger.error(f"Erro ao enviar email de convite para {email}: {str(e)}")
+            return False 

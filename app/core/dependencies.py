@@ -71,7 +71,7 @@ async def get_admin_user(current_user: User = Depends(get_current_user)) -> User
     Raises:
         HTTPException: Se o usuário não for um administrador.
     """
-    if current_user.role != "admin":
+    if not current_user.is_admin:
         logger.warning(f"Tentativa de acesso admin por usuário não autorizado: {current_user.email}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

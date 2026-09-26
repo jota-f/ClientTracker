@@ -26,7 +26,8 @@ class EmailVerificationMiddleware(BaseHTTPMiddleware):
             "/google/callback",
             "/calendar/google/callback",
             "/debug/auth-token",
-            "/landing"  # Adicionando landing à lista de caminhos isentos
+            "/landing",
+            "/api/v1/public"
         ]
         
         # Verifica se o caminho atual está na lista de isentos

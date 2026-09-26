@@ -54,6 +54,16 @@
                 </div>
 
                 <div>
+                    <label for="invite_code" class="block text-sm font-medium text-gray-700">
+                        Código de convite
+                    </label>
+                    <div class="mt-1">
+                        <input id="invite_code" name="invite_code" type="text" required
+                            class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+                </div>
+
+                <div>
                     <label for="password" class="block text-sm font-medium text-gray-700">
                         Senha
                     </label>
@@ -88,6 +98,32 @@
     document.addEventListener('DOMContentLoaded', function() {
         const registerForm = document.getElementById('register-form');
         const errorMessage = document.getElementById('error-message');
+        
+        // Captura o código de convite da URL se presente
+        const urlParams = new URLSearchParams(window.location.search);
+        const inviteCode = urlParams.get('invite');
+        if (inviteCode) {
+            document.getElementById('invite_code').value = inviteCode;
+            // Adiciona uma classe visual para destacar que o campo foi preenchido automaticamente
+            document.getElementById('invite_code').classList.add('bg-green-50', 'border-green-300');
+            
+            // Mostra uma mensagem amigável
+            const inviteMessage = document.createElement('div');
+            inviteMessage.id = 'invite-message';
+            inviteMessage.className = 'mb-4 p-3 rounded-md bg-green-50 text-green-700 border border-green-200';
+            inviteMessage.innerHTML = `
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 text-green-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span><strong>Código de convite detectado!</strong> O código foi preenchido automaticamente. Complete seus dados para criar sua conta.</span>
+                </div>
+            `;
+            
+            // Insere a mensagem antes do formulário
+            const form = document.getElementById('register-form');
+            form.parentNode.insertBefore(inviteMessage, form);
+        }
 
         registerForm.addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -119,7 +155,8 @@
                         username: username,
                         email: email,
                         full_name: fullName || null,
-                        password: password
+                        password: password,
+                        invite_code: document.getElementById('invite_code').value
                     })
                 });
                 

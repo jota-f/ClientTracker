@@ -30,6 +30,45 @@
         </div>
     </div>
 
+    <!-- Painel de Filtros e Pesquisa -->
+    <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+        <div class="flex flex-col md:flex-row gap-4">
+            <div class="flex-grow">
+                <div class="relative">
+                    <input type="text" id="searchTasks" placeholder="Buscar tarefas..."
+                           class="pl-10 pr-4 py-2 w-full rounded-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <select id="filterStatus" class="px-3 py-2 rounded-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                    <option value="">Status (Todos)</option>
+                    <option value="TODO">A Fazer</option>
+                    <option value="IN_PROGRESS">Em Progresso</option>
+                    <option value="DONE">Concluída</option>
+                    <option value="ARCHIVED">Arquivada</option>
+                </select>
+                <select id="filterPriority" class="px-3 py-2 rounded-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                    <option value="">Prioridade (Todas)</option>
+                    <option value="URGENT_IMPORTANT">FAÇA AGORA</option>
+                    <option value="NOT_URGENT_IMPORTANT">PLANEJE</option>
+                    <option value="URGENT_NOT_IMPORTANT">RESOLVA RÁPIDO</option>
+                    <option value="NOT_URGENT_NOT_IMPORTANT">POSTERGUE</option>
+                </select>
+                <select id="sortTasks" class="px-3 py-2 rounded-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                    <option value="due_date_asc">Data (Próximas primeiro)</option>
+                    <option value="due_date_desc">Data (Distantes primeiro)</option>
+                    <option value="priority_desc">Prioridade (Alta para Baixa)</option>
+                    <option value="priority_asc">Prioridade (Baixa para Alta)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
@@ -42,10 +81,16 @@
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                 </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody id="tasksTableBody" class="bg-white divide-y divide-gray-200">
                 {% for task in tasks %}
-                <tr>
-                    <td class="px-6 py-4 whitespace-nowrap">
+                <tr class="task-row" 
+                    data-title="{{ task.title }}" 
+                    data-description="{{ task.description }}" 
+                    data-status="{{ task.status }}" 
+                    data-priority="{{ task.priority }}"
+                    data-client="{{ task.client_name }}"
+                    data-due-date="{% if task.due_date %}{{ task.due_date.timestamp() }}{% else %}9999999999{% endif %}">
+                    <td class="px-6 py-4">
                         <a href="/tasks/{{ task.id }}" class="text-blue-600 hover:text-blue-900 font-medium">
                             {{ task.title }}
                         </a>
@@ -55,7 +100,7 @@
                         </div>
                         {% endif %}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
+                    <td class="px-6 py-4">
                         {% if task.priority == "URGENT_IMPORTANT" %}
                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
                             FAÇA AGORA
@@ -74,7 +119,7 @@
                         </span>
                         {% endif %}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
+                    <td class="px-6 py-4">
                         {% if task.status == "TODO" %}
                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
                             A Fazer
@@ -93,7 +138,7 @@
                         </span>
                         {% endif %}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
+                    <td class="px-6 py-4">
                         {% if task.client_name %}
                         <a href="/clients/{{ task.client_id }}" class="text-blue-600 hover:text-blue-900">
                             {{ task.client_name }}
@@ -102,7 +147,7 @@
                         <span class="text-gray-500">Nenhum</span>
                         {% endif %}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
+                    <td class="px-6 py-4">
                         {% if task.due_date %}
                         <span class="{% if task.due_date < now %}text-red-600{% else %}text-gray-900{% endif %}">
                             {{ task.due_date.strftime('%d/%m/%Y') }}
@@ -111,14 +156,14 @@
                         <span class="text-gray-500">Sem data</span>
                         {% endif %}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div class="relative" x-data="{ open: false }">
-                            <button @click="open = !open" class="text-gray-500 hover:text-gray-700">
+                    <td class="px-6 py-4 text-right text-sm font-medium">
+                        <div class="relative task-menu-container">
+                            <button class="task-menu-button text-gray-500 hover:text-gray-700">
                                 <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                                 </svg>
                             </button>
-                            <div x-show="open" @click.away="open = false" class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="user-menu">
+                            <div class="task-dropdown origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none" style="display: none;" role="menu" aria-orientation="vertical" aria-labelledby="user-menu">
                                 <a href="/tasks/{{ task.id }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Ver Detalhes</a>
                                 <a href="/tasks/{{ task.id }}/edit" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">Editar</a>
                                 <button class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 delete-task" data-id="{{ task.id }}" data-title="{{ task.title }}">Excluir</button>
@@ -127,7 +172,7 @@
                     </td>
                 </tr>
                 {% else %}
-                <tr>
+                <tr id="noTasksRow">
                     <td colspan="6" class="px-6 py-10 text-center">
                         <p class="text-gray-500">Nenhuma tarefa encontrada</p>
                         <a href="/tasks/new" class="mt-2 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
@@ -138,6 +183,41 @@
                 {% endfor %}
             </tbody>
         </table>
+    </div>
+    
+    <!-- Indicador visual de rolagem para dispositivos móveis -->
+    <div class="md:hidden p-2 text-center text-sm text-gray-500">
+        <p>← Deslize para visualizar todos os dados →</p>
+    </div>
+    
+    <!-- Paginação -->
+    <div class="px-6 py-4 bg-white border-t border-gray-200">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-700">
+                    Mostrando <span id="startIndex">1</span>-<span id="endIndex">{{ tasks|length }}</span> de <span id="totalTasks">{{ tasks|length }}</span> tarefas
+                </p>
+            </div>
+            <div class="flex-1 flex justify-center md:justify-end">
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                    <button id="prevPageBtn" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                        <span class="sr-only">Anterior</span>
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    <span id="currentPageDisplay" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                        1
+                    </span>
+                    <button id="nextPageBtn" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                        <span class="sr-only">Próximo</span>
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </nav>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -176,7 +256,6 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/alpinejs@2.8.2/dist/alpine.min.js" defer></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const deleteModal = document.getElementById('deleteTaskModal');
@@ -225,6 +304,277 @@
                 }
             }
         });
+
+        // Implementação da pesquisa, filtragem e paginação
+        const searchInput = document.getElementById('searchTasks');
+        const filterStatus = document.getElementById('filterStatus');
+        const filterPriority = document.getElementById('filterPriority');
+        const sortSelect = document.getElementById('sortTasks');
+        const prevPageBtn = document.getElementById('prevPageBtn');
+        const nextPageBtn = document.getElementById('nextPageBtn');
+        const currentPageDisplay = document.getElementById('currentPageDisplay');
+        const startIndexSpan = document.getElementById('startIndex');
+        const endIndexSpan = document.getElementById('endIndex');
+        const totalTasksSpan = document.getElementById('totalTasks');
+        const noTasksRow = document.getElementById('noTasksRow');
+        
+        const taskRows = Array.from(document.querySelectorAll('.task-row'));
+        let filteredTasks = [...taskRows];
+        let currentPage = 1;
+        const itemsPerPage = 10;
+
+        // Função para aplicar filtros e pesquisa
+        function applyFilters() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            const statusFilter = filterStatus.value;
+            const priorityFilter = filterPriority.value;
+            
+            filteredTasks = taskRows.filter(row => {
+                const title = row.getAttribute('data-title').toLowerCase();
+                const description = row.getAttribute('data-description')?.toLowerCase() || '';
+                const status = row.getAttribute('data-status');
+                const priority = row.getAttribute('data-priority');
+                const client = row.getAttribute('data-client')?.toLowerCase() || '';
+                
+                const matchesSearch = searchTerm === '' || 
+                    title.includes(searchTerm) || 
+                    description.includes(searchTerm) ||
+                    client.includes(searchTerm);
+                    
+                const matchesStatus = statusFilter === '' || status === statusFilter;
+                const matchesPriority = priorityFilter === '' || priority === priorityFilter;
+                
+                return matchesSearch && matchesStatus && matchesPriority;
+            });
+            
+            // Aplicar ordenação
+            applySorting();
+            
+            // Atualizar paginação
+            currentPage = 1;
+            updatePagination();
+            displayTasks();
+        }
+        
+        // Função para aplicar ordenação
+        function applySorting() {
+            const sortValue = sortSelect.value;
+            
+            filteredTasks.sort((a, b) => {
+                if (sortValue === 'due_date_asc') {
+                    const dateA = parseFloat(a.getAttribute('data-due-date'));
+                    const dateB = parseFloat(b.getAttribute('data-due-date'));
+                    return dateA - dateB;
+                }
+                else if (sortValue === 'due_date_desc') {
+                    const dateA = parseFloat(a.getAttribute('data-due-date'));
+                    const dateB = parseFloat(b.getAttribute('data-due-date'));
+                    return dateB - dateA;
+                }
+                else if (sortValue === 'priority_desc') {
+                    const priorityOrder = {
+                        'URGENT_IMPORTANT': 0,
+                        'URGENT_NOT_IMPORTANT': 1,
+                        'NOT_URGENT_IMPORTANT': 2,
+                        'NOT_URGENT_NOT_IMPORTANT': 3
+                    };
+                    const priorityA = priorityOrder[a.getAttribute('data-priority')] || 99;
+                    const priorityB = priorityOrder[b.getAttribute('data-priority')] || 99;
+                    return priorityA - priorityB;
+                }
+                else if (sortValue === 'priority_asc') {
+                    const priorityOrder = {
+                        'URGENT_IMPORTANT': 0,
+                        'URGENT_NOT_IMPORTANT': 1,
+                        'NOT_URGENT_IMPORTANT': 2,
+                        'NOT_URGENT_NOT_IMPORTANT': 3
+                    };
+                    const priorityA = priorityOrder[a.getAttribute('data-priority')] || 99;
+                    const priorityB = priorityOrder[b.getAttribute('data-priority')] || 99;
+                    return priorityB - priorityA;
+                }
+                return 0;
+            });
+        }
+        
+        // Função para exibir tarefas
+        function displayTasks() {
+            // Esconde todas as linhas
+            taskRows.forEach(row => {
+                row.classList.add('hidden');
+            });
+            
+            // Mostra mensagem quando não há tarefas
+            if (filteredTasks.length === 0) {
+                if (noTasksRow) {
+                    noTasksRow.classList.remove('hidden');
+                }
+            } else {
+                if (noTasksRow) {
+                    noTasksRow.classList.add('hidden');
+                }
+                
+                // Calcula o intervalo de tarefas a mostrar
+                const start = (currentPage - 1) * itemsPerPage;
+                const end = Math.min(start + itemsPerPage, filteredTasks.length);
+                
+                // Mostra as tarefas da página atual
+                for (let i = start; i < end; i++) {
+                    filteredTasks[i].classList.remove('hidden');
+                }
+                
+                // Atualiza informações de paginação
+                startIndexSpan.textContent = filteredTasks.length > 0 ? start + 1 : 0;
+                endIndexSpan.textContent = end;
+                totalTasksSpan.textContent = filteredTasks.length;
+            }
+        }
+        
+        // Função para atualizar controles de paginação
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredTasks.length / itemsPerPage);
+            
+            prevPageBtn.disabled = currentPage <= 1;
+            nextPageBtn.disabled = currentPage >= totalPages;
+            
+            currentPageDisplay.textContent = `${currentPage} de ${totalPages || 1}`;
+        }
+        
+        // Eventos
+        searchInput.addEventListener('input', applyFilters);
+        filterStatus.addEventListener('change', applyFilters);
+        filterPriority.addEventListener('change', applyFilters);
+        sortSelect.addEventListener('change', applyFilters);
+        
+        prevPageBtn.addEventListener('click', function() {
+            if (currentPage > 1) {
+                currentPage--;
+                updatePagination();
+                displayTasks();
+            }
+        });
+        
+        nextPageBtn.addEventListener('click', function() {
+            const totalPages = Math.ceil(filteredTasks.length / itemsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                updatePagination();
+                displayTasks();
+            }
+        });
+        
+        // Inicializar a página
+        applyFilters();
+
+        // Configurando os menus de opções das tarefas - solução robusta
+        setupTaskMenus();
+        
+        function setupTaskMenus() {
+            const menuButtons = document.querySelectorAll('.task-menu-button');
+            const openMenus = new Set(); // Para rastrear menus abertos
+            
+            menuButtons.forEach(button => {
+                const container = button.closest('.task-menu-container');
+                const dropdown = container.querySelector('.task-dropdown');
+                
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    
+                    const isOpen = dropdown.style.display === 'block';
+                    
+                    // Feche todos os outros menus abertos
+                    document.querySelectorAll('.task-dropdown').forEach(d => {
+                        if (d !== dropdown && d.style.display === 'block') {
+                            d.style.display = 'none';
+                            openMenus.delete(d);
+                        }
+                    });
+                    
+                    // Toggle do menu atual
+                    dropdown.style.display = isOpen ? 'none' : 'block';
+                    
+                    if (!isOpen) {
+                        openMenus.add(dropdown);
+                        
+                        // Adicionar animação
+                        dropdown.classList.add('animate-fadeIn');
+                        dropdown.classList.remove('animate-fadeOut');
+                    } else {
+                        openMenus.delete(dropdown);
+                        
+                        // Adicionar animação
+                        dropdown.classList.add('animate-fadeOut');
+                        dropdown.classList.remove('animate-fadeIn');
+                    }
+                });
+            });
+            
+            // Fechar todos os menus ao clicar fora
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.task-menu-container')) {
+                    openMenus.forEach(menu => {
+                        menu.style.display = 'none';
+                    });
+                    openMenus.clear();
+                }
+            });
+            
+            // Adicionar estilos de animação
+            if (!document.getElementById('task-menu-styles')) {
+                const style = document.createElement('style');
+                style.id = 'task-menu-styles';
+                style.textContent = `
+                    @keyframes fadeIn {
+                        from { opacity: 0; transform: scale(0.95); }
+                        to { opacity: 1; transform: scale(1); }
+                    }
+                    @keyframes fadeOut {
+                        from { opacity: 1; transform: scale(1); }
+                        to { opacity: 0; transform: scale(0.95); }
+                    }
+                    .animate-fadeIn {
+                        animation: fadeIn 0.1s ease-out forwards;
+                    }
+                    .animate-fadeOut {
+                        animation: fadeOut 0.1s ease-in forwards;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        }
     });
 </script>
+
+<style>
+.group:hover .group-hover\:block {
+    display: block;
+}
+
+/* Estilos para melhorar a responsividade em dispositivos móveis */
+@media (max-width: 768px) {
+    .overflow-x-auto {
+        -webkit-overflow-scrolling: touch; /* Para melhor experiência de rolagem no iOS */
+        scrollbar-width: thin; /* Para Firefox */
+    }
+    
+    /* Personalizando a aparência da barra de rolagem para Chrome/Safari */
+    .overflow-x-auto::-webkit-scrollbar {
+        height: 6px;
+    }
+    
+    .overflow-x-auto::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+    
+    .overflow-x-auto::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 3px;
+    }
+    
+    .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+}
+</style>
 {% endblock %} 
